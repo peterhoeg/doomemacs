@@ -250,7 +250,7 @@ all CAPFs are interactive to be called this way, in which case you can use
 * Troubleshooting
 [[doom-report:][Report an issue?]]
 
-** Performance issues with ~cape-dabbrev~
+** Troubleshooting ~cape-dabbrev~
 
 If you have performance issues with ~cape-dabbrev~, the first thing I recommend
 doing is to look at the list of buffers Dabbrev is scanning:

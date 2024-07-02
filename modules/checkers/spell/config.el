@@ -74,7 +74,7 @@
 
     (use-package! spell-fu
       :when (executable-find "aspell")
-      :hook (text-mode . spell-fu-mode)
+      :hook (text-mode . spell-fu--mode-turn-on)
       :general ([remap ispell-word] #'+spell/correct)
       :preface
       (defvar +spell-correct-interface
@@ -137,7 +137,7 @@
         (add-hook! '(yaml-mode-hook
                      conf-mode-hook
                      prog-mode-hook)
-                   #'spell-fu-mode))
+                   #'spell-fu--mode-turn-on))
       :config
       (add-hook! 'spell-fu-mode-hook
         (defun +spell-init-excluded-faces-h ()

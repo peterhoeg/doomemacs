@@ -26,12 +26,13 @@
   :config
   ;; Disable HTML compatibility in php-mode. `web-mode' has superior support for
   ;; php+html. Use the .phtml extension instead.
-  (setq php-mode-template-compatibility nil)
+  (setq php-mode-template-compatibility nil))
 
-  (set-docsets! 'php-mode "PHP" "PHPUnit" "Laravel" "CakePHP" "CodeIgniter" "Doctrine_ORM")
-  (set-repl-handler! 'php-mode #'+php/open-repl)
-  (set-lookup-handlers! 'php-mode :documentation #'php-search-documentation)
-  (set-ligatures! 'php-mode
+(after! (:or php-mode php-ts-mode)
+  (set-docsets! '(php-mode php-ts-mode) "PHP" "PHPUnit" "Laravel" "CakePHP" "CodeIgniter" "Doctrine_ORM")
+  (set-repl-handler! '(php-mode php-ts-mode) #'+php/open-repl)
+  (set-lookup-handlers! '(php-mode php-ts-mode) :documentation #'php-search-documentation)
+  (set-ligatures! '(php-mode php-ts-mode)
     ;; Functional
     :lambda "function()" :lambda "fn"
     :def "function"
@@ -54,8 +55,8 @@
       ;; `company-dabbrev-code', in that order.
       (when +php--company-backends
         (set-company-backend! 'php-mode
-          (cons :separate +php--company-backends)
-          'company-dabbrev-code))
+                              (cons :separate +php--company-backends)
+                              'company-dabbrev-code))
     (when (executable-find "php-language-server.php")
       (setq lsp-clients-php-server-command "php-language-server.php"))
     (add-hook 'php-mode-local-vars-hook #'lsp! 'append))
@@ -71,7 +72,7 @@
     (sp-local-pair "<?php" "?>" :post-handlers '(("| " "SPC") ("||\n[i]" "RET"))))
 
   (map! :localleader
-        :map php-mode-map
+        :map '(php-mode-map php-ts-mode-map)
         :prefix ("t" . "test")
         "r" #'phpunit-current-project
         "a" #'phpunit-current-class
@@ -91,7 +92,7 @@
 
 
 (use-package! php-extras
-  :after php-mode
+  :after (:or php-mode php-ts-mode)
   :preface
   (setq php-extras-eldoc-functions-file
         (concat doom-profile-cache-dir "php-extras-eldoc-functions"))
@@ -143,11 +144,11 @@
 ;; Projects
 
 (def-project-mode! +php-laravel-mode
-  :modes '(php-mode yaml-mode web-mode nxml-mode js2-mode scss-mode)
+  :modes '(php-mode php-ts-mode yaml-mode web-mode nxml-mode js2-mode scss-mode)
   :files (and "artisan" "server.php"))
 
 (def-project-mode! +php-composer-mode
-  :modes '(web-mode php-mode)
+  :modes '(web-mode php-mode php-ts-mode)
   :files ("composer.json"))
 
 (def-project-mode! +phpunit-docker-compose-mode

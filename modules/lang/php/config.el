@@ -72,7 +72,7 @@
     (sp-local-pair "<?php" "?>" :post-handlers '(("| " "SPC") ("||\n[i]" "RET"))))
 
   (map! :localleader
-        :map '(php-mode-map php-ts-mode-map)
+        :map php-base-mode-map
         :prefix ("t" . "test")
         "r" #'phpunit-current-project
         "a" #'phpunit-current-class
@@ -127,7 +127,7 @@
   :init
   (map! :after php-mode
         :localleader
-        :map php-mode-map
+        :map php-base-mode-map
         :prefix ("c" . "composer")
         "c" #'composer
         "i" #'composer-install

@@ -73,7 +73,7 @@
 
     (use-package! spell-fu
       :when (executable-find "aspell")
-      :hook (text-mode . spell-fu-mode)
+      :hook (text-mode . spell-fu--mode-turn-on)
       :commands (spell-fu-word-add
                  spell-fu-word-remove
                  spell-fu-goto-next-error
@@ -140,7 +140,7 @@
         (add-hook! '(yaml-mode-hook
                      conf-mode-hook
                      prog-mode-hook)
-                   #'spell-fu-mode))
+                   #'spell-fu--mode-turn-on))
       :config
       (add-hook! 'spell-fu-mode-hook
         (defun +spell-init-excluded-faces-h ()

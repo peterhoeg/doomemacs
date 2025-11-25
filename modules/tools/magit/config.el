@@ -329,7 +329,7 @@ FUNCTION
   ;; See https://chris.beams.io/posts/git-commit/
   (setq git-commit-summary-max-length 50
         git-commit-style-convention-checks '(overlong-summary-line non-empty-second-line))
-  (setq-hook! 'git-commit-mode-hook fill-column 72)
+  (setq-hook! 'git-commit-setup-hook fill-column 72)
 
   (add-hook! 'git-commit-setup-hook
     (defun +vc-start-in-insert-state-maybe-h ()

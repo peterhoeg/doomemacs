@@ -166,7 +166,7 @@
                  rst-mode-hook
                  mu4e-compose-mode-hook
                  message-mode-hook
-                 git-commit-mode-hook)
+                 git-commit-setup-hook)
                #'flyspell-mode)
 
     (when (modulep! +everywhere)

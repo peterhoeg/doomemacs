@@ -755,7 +755,7 @@ executable context."
              ((or "-?" "--help")
               (doom-cli-call `(:help ,@(cdr command)) context)
               t)
-             (_ (error "In meta mode with no destination!"))))
+             (_ (signal 'doom-cli-error `(lost-in-meta-mode)))))
 
           ((not (and cli (doom-cli-fn (doom-cli-get cli))))
            (signal 'doom-cli-command-not-found-error
@@ -779,11 +779,10 @@ executable context."
                                (insert-file-contents file)
                                (read (current-buffer)))))
       (unless (doom-cli-context-p old-context)
-        (error "An invalid context was restored from file: %s" file))
+        (signal 'doom-cli-error `(invalid-context ,file)))
       (unless (equal (doom-cli-context-prefix context)
                      (doom-cli-context-prefix old-context))
-        (error "Restored context belongs to another script: %s"
-               (doom-cli-context-prefix old-context)))
+        (signal 'doom-cli-error `(wrong-context-prefix ,(doom-cli-context-prefix old-context))))
       (pcase-dolist (`(,slot ,_ . ,plist)
                      (cdr (cl-struct-slot-info 'doom-cli-context)))
         (unless (plist-get plist :skip)
@@ -1205,7 +1204,7 @@ session ends (see the shebang lines of this file). It's done this way because
 Emacs' batch library lacks an implementation of the exec system call."
   (cl-check-type context doom-cli-context)
   (when (= (doom-cli-context-step context) -1)
-    (error "__DOOMSTEP envvar missing; extended `exit!' functionality will not work"))
+    (signal 'doom-cli-error `(envvar-missing "__DOOMSTEP")))
   (let* ((pid  (doom-cli-context-pid context))
          (step (doom-cli-context-step context))
          (shext (if (eq doom-cli-shell 'pwsh) "ps1" "sh"))
@@ -1327,10 +1326,10 @@ Emacs' batch library lacks an implementation of the exec system call."
       ((pred (keywordp))
        (if-let* ((fn (alist-get command doom-cli-exit-commands)))
            (funcall fn args context)
-         (error "Invalid exit command: %s" command)))
+         (signal 'doom-cli-error `(invalid-exit-command ,command))))
 
       ;; Any other value is invalid.
-      (_ (error "Invalid exit code or command: %s" command)))))
+      (_ (signal 'doom-cli-error `(invalid-exit-command ,command))))))
 
 (defun doom-cli--exit-restart (args context)
   "Restart the session, verbatim (persisting CONTEXT).
@@ -1979,7 +1978,7 @@ Once done, this function kills Emacs gracefully and writes output to log files
 errors to `doom-cli-error-file')."
   (unless doom-cli--loading
     (if (not (equal (doom-cli-context-prefix doom-cli--context) "@"))
-        (error "Cannot nest `run!' calls")
+        (signal 'doom-cli-error `(nested-run-calls))
       (run-hooks 'doom-cli-initialize-hook)
       (with-doom-context 'run
         (let* ((args (flatten-list args))

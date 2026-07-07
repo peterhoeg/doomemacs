@@ -61,7 +61,7 @@ uses a straight or package.el command directly).")
     ;;   projectile -- everything that makes v2 distinct from v3. The module is
     ;;   here to stay, but it won't be hardcoded after v3.
     (doom-module--put '(:doom . compat)
-                      :flags '(+use-package +keybinds +better-jumper +projectile +smartparens)
+                      :flags '(+keybinds +better-jumper +projectile +smartparens)
                       :depth -115)
     ;; Load $DOOMDIR/init.el, where the user's `doom!' lives, which will inform
     ;; us of all desired modules.

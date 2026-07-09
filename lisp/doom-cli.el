@@ -718,7 +718,7 @@ Throws `doom-cli-invalid-option-error' for illegal values."
                           ,@(if (memq ?1 pipes) `((:out . ,scope)))))
          :skip t)
   ;; If non-nil, suppress prompts and auto-accept their consequences.
-  suppress-prompts-p
+  suppress-prompts-p   ; DEPRECATED: Remove in v3
   (prefix "@")  ; The basename of the script creating this context
   meta-p        ; Whether or not this is a help/meta request
   error         ;
@@ -918,11 +918,11 @@ executable context."
 (defun doom-cli-context-get (context key &optional null-value)
   "Fetch KEY from CONTEXT's options or state.
 
-Context objects are essentially persistent storage, and may contain arbitrary
+Context objects are essentially persistent storage and may contain arbitrary
 state tied to switches (\"--foo\" or \"-x\") or arbitrary symbols (state).
 
 If KEY is a string, fetch KEY from context's OPTIONS (by switch).
-If KEY is a symbol, fetch KEY from context's STATE.
+If KEY is a symbol or keyword, fetch KEY from context's STATE.
 Return NULL-VALUE if KEY does not exist."
   (if-let* ((value
              (if (stringp key)
@@ -940,7 +940,9 @@ state tied to switches (\"--foo\" or \"-x\") or arbitrary symbols (state). Use
 this to register data into CONTEXT.
 
 If KEY is a string, set the value of a switch named KEY to VAL.
-If KEY is a symbol, set the value of the context's STATE to VAL."
+If KEY is a symbol or keyword, set the value of the context's STATE to VAL.
+It is a convention that KEY be a keyword for internal state (for the parent
+script), freeing up plain symbols for user-space state."
   (setf (alist-get
          key (if (stringp key)
                  (doom-cli-context-options context)
@@ -2009,9 +2011,25 @@ errors to `doom-cli-error-file')."
 (defalias 'sh!! #'doom-exec-process)
 (make-obsolete 'sh!! "Use `$' instead" "2.3.0")
 
-(defun get! (key) (doom-cli-context-get doom-cli--context key))
+(defun get! (key &optional null-value)
+  "Return KEY's value from current CLI context, otherwise NULL-VALUE.
 
-(defun put! (key val) (doom-cli-context-put doom-cli--context key val))
+Same as `doom-cli-context-get' with the active CLI context as the first
+argument. Use `put!' or `doom-cli-context-put' to set these values."
+  (doom-cli-context-get doom-cli--context key null-value))
+
+(defun put! (key val &rest pairs)
+  "Save each VAL under KEY in the current CLI context.
+
+Same as `doom-cli-context-put' with the active CLI context as the first
+argument. Use `get!' or `doom-cli-context-get' to retrieve these values.
+
+\(fn KEY VAL...)"
+  (cl-loop with last-val = nil
+           for (key val) on (cons key (cons val pairs)) by #'cddr
+           do (doom-cli-context-put doom-cli--context key val)
+           and do (setq last-val val)
+           finally return last-val))
 
 
 ;;; ** doom-cli-help

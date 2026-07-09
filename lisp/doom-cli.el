@@ -12,6 +12,7 @@
 
 (eval-and-compile
   (doom-require 'doom-cli 'print)
+  (doom-require 'doom-cli 'sh)
   ;; TODO: (doom-require 'doom-cli 'loaddefs)
   (doom-require 'doom-cli 'autoloads)
   (doom-require 'doom-lib 'process)
@@ -2004,12 +2005,9 @@ errors to `doom-cli-error-file')."
                 (signal (car e) (cdr e)))))
            context))))))
 
-(defalias 'sh! #'doom-call-process)
-
+;;; DEPRECATED: Remove in v3
 (defalias 'sh!! #'doom-exec-process)
-
-;; TODO: Make `git!' into a more sophisticated wrapper around git
-(defalias 'git! (apply-partially #'straight--process-run "git"))
+(make-obsolete 'sh!! "Use `$' instead" "2.3.0")
 
 (defun get! (key) (doom-cli-context-get doom-cli--context key))
 

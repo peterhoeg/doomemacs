@@ -113,7 +113,7 @@ Change `$DOOMDIR' with the `--doomdir' option, e.g.
         (print! (warn "~/.emacs file detected. Delete it or Emacs won't load Doom correctly!")))
 
       ;; Ensure module sources are initialized
-      (or (zerop (car (sh! "git" "submodule" "update" "-f" "--init" "--recursive")))
+      (or (sh? git submodule update -f --init --recursive)
           (error "Failed to update submodules"))
       (doom-cli-context-put context 'installing t)
       (exit! "doom" "sync" (if aot? "--aot") (if (eq envfile? :yes) "--env")))))

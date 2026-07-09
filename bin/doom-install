@@ -104,7 +104,7 @@ Change `$DOOMDIR' with the `--doomdir' option, e.g.
       (print-group!
         (condition-case e
             (call! `(ci deploy-hooks ,@(if yes? '("--force"))))
-          ('user-error
+          (user-error
            (print! (warn "%s") (error-message-string e))))))
 
     (if (eq install? :no)

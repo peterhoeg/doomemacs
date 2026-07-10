@@ -1,10 +1,11 @@
 ;;; lisp/lib/process.el -*- lexical-binding: t; -*-
 
 (defun doom--strip-final-newline ()
-  (save-excursion
-    (goto-char (point-max))
-    (while (looking-at-p "^$")
-      (delete-char -1))))
+  (unless (= (point-min) (point-max))
+    (save-excursion
+      (goto-char (point-max))
+      (when (looking-at-p "^$")
+        (delete-char -1)))))
 
 ;;;###autoload
 (defun doom-call-process (command &rest args)

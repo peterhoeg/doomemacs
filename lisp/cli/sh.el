@@ -19,8 +19,8 @@
 
 (defun doom-sh--process-args (args)
   (cl-loop for arg in (delq nil args)
-           if (symbolp arg)
-           collect (symbol-name arg)
+           if (or (numberp arg) (symbolp arg))
+           collect (format "%s" arg)
            else collect arg))
 
 ;;;###autoload

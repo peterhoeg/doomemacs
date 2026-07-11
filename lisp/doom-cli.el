@@ -2009,7 +2009,7 @@ errors to `doom-cli-error-file')."
 
 ;;; DEPRECATED: Remove in v3
 (defalias 'sh!! #'doom-exec-process)
-(make-obsolete 'sh!! "Use `$' instead" "2.3.0")
+(make-obsolete 'sh!! "Use `sh!' instead" "2.3.0")
 
 (defun get! (key &optional null-value)
   "Return KEY's value from current CLI context, otherwise NULL-VALUE.

@@ -53,26 +53,18 @@
          (persp-load-state-from-file file))
         ((and (require 'frameset nil t)
               (require 'desktop nil t))
-         (let ((file (expand-file-name (doom-session-file)))
-               ;; We mock these two functions while restoring frames Calls to
-               ;; `display-color-p' blocks Emacs in daemon mode (possibly)
-               ;; because the call fails
-               (display-color-p (symbol-function 'display-color-p))
-               ;; We mock `display-graphic-p' since desktop mode has changed to
-               ;; not restore frames when we are not on graphic display
-               (display-graphic-p (symbol-function 'display-graphic-p)))
-           (dlet ((desktop-file-modtime nil)
-                  (desktop-dirname (file-name-directory file))
-                  (desktop-base-file-name (file-name-nondirectory file))
-                  (desktop-base-lock-name (concat (file-name-nondirectory file) ".lock"))
-                  (desktop-restore-reuses-frames nil)
-                  ;; Disable prompts for safe variables during restoration
-                  (enable-local-variables :safe))
-             (if (daemonp)
-                 (letf! ((#'display-color-p #'ignore)
-                         (#'display-graphic-p #'ignore))
-                   (desktop-read desktop-dirname))
-               (desktop-read desktop-dirname)))))
+         (dlet ((desktop-file-modtime nil)
+                (desktop-dirname (file-name-directory file))
+                (desktop-base-file-name (file-name-nondirectory file))
+                (desktop-base-lock-name (concat (file-name-nondirectory file) ".lock"))
+                (desktop-restore-reuses-frames nil)
+                ;; Disable prompts for safe variables during restoration
+                (enable-local-variables :safe))
+           (if (daemonp)
+               (letf! ((#'display-color-p #'always)
+                       (#'display-graphic-p #'always))
+                 (desktop-read desktop-dirname))
+             (desktop-read desktop-dirname))))
         ((error "No session backend to load session with"))))
 
 

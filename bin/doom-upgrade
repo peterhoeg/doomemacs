@@ -96,7 +96,7 @@ libraries. It is the equivalent of the following shell commands:
   "Upgrade Doom to the latest version non-destructively."
   (let ((default-directory doom-emacs-dir)
         process-file-side-effects)
-    (unless (file-directory-p ".git")
+    (unless (file-exists-p ".git")
       (user-error "Couldn't find Doom's .git directory. Was Doom cloned properly?"))
     ;; E.g. user's Doom config is a submodule in the user's dotfiles.
     (unless (file-equal-p doom-emacs-dir (sh< git rev-parse --show-toplevel))

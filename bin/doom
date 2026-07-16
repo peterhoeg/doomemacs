@@ -259,7 +259,7 @@ SEE ALSO:
 
 
 ;;
-;;; * Load user config + commands
+;;; * Load user config
 
 ;; Load $DOOMDIR/init.el, to read the user's `doom!' block and give users an
 ;; opportunity to customize the CLI environment, if they like. Otherwise, they
@@ -274,6 +274,14 @@ SEE ALSO:
   (dolist (dir (nreverse (split-string doompath path-separator)))
     (add-to-list 'doom-cli-load-path dir)))
 
+
+;;
+;;; * CLI Bootstrapper
+
+(defvar doom-cli-loaddefs-file
+  (doom-cache-dir (format "doom-cli-loaddefs.%s.el" doom-version))
+  "Where to store Doom's CLI autoloads.")
+
 ;; There are a lot of CLIs, and some have expensive initialization, so best we
 ;; load them lazily.
 (defcli-group!
@@ -283,6 +291,19 @@ SEE ALSO:
   (defcli-alias! ((help h)) (:root :help))
   ;; And suggest its use when errors occur.
   (add-to-list 'doom-help-commands "%p h[elp] %c")
+
+  ;; Load or generate the CLI autoloads.
+  (or (with-demoted-errors "doom-cli-loaddefs: %s"
+        (require 'doom-cli-loaddefs doom-cli-loaddefs-file t))
+      (require 'doom-cli-loaddefs
+               (doom-file-write
+                doom-cli-loaddefs-file
+                `(";; -*- lexical-binding: t; no-byte-compile t; -*-"
+                  ,@(doom-loaddefs-scan
+                     (doom-glob doom-core-dir "cli/*.el")
+                     (seq-filter #'doom-cli-executable-p
+                                 (doom-glob doom-emacs-dir "bin/doom-*")))
+                  (provide 'doom-cli-loaddefs)))))
 
   ;; Eagerly load the two commands that should always be present. Running one of
   ;; these commands is required for the rest of the commands to work.

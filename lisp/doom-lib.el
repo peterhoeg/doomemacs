@@ -748,96 +748,68 @@ Can chain these comparisons by adding more (COMPn Vn) pairs afterwards.
 
 ;;; ** Closure factories
 
+(defun doom--lambda-allow-other-keys (args)
+  (let ((add (and (memq '&key args)
+                  (not (memq '&allow-other-keys args))))
+        out)
+    (dolist (arg args)
+      (when (and add (eq arg '&aux))
+        (push '&allow-other-keys out))
+      (push (if (proper-list-p arg)
+                (doom--lambda-allow-other-keys arg)
+              arg)
+            out))
+    (setq out (nreverse out))
+    (if (and add (not (memq '&aux args)))
+        (nconc out (list '&allow-other-keys))
+      out)))
+
 (defmacro lambda! (arglist &rest body)
   "Returns (cl-function (lambda ARGLIST BODY...))
+
 The closure is wrapped in `cl-function', meaning ARGLIST will accept anything
 `cl-defun' will. Implicitly adds `&allow-other-keys' if `&key' is present in
 ARGLIST."
   (declare (indent defun) (doc-string 1) (pure t) (side-effect-free t))
-  `(cl-function
-    (lambda
-      ,(letf! (defun* allow-other-keys (args)
-                (mapcar
-                 (lambda (arg)
-                   (cond ((nlistp (cdr-safe arg)) arg)
-                         ((listp arg) (allow-other-keys arg))
-                         (arg)))
-                 (if (and (memq '&key args)
-                          (not (memq '&allow-other-keys args)))
-                     (if (memq '&aux args)
-                         (let (newargs arg)
-                           (while args
-                             (setq arg (pop args))
-                             (when (eq arg '&aux)
-                               (push '&allow-other-keys newargs))
-                             (push arg newargs))
-                           (nreverse newargs))
-                       (append args (list '&allow-other-keys)))
-                   args)))
-         (allow-other-keys arglist))
-      ,@body)))
+  `(cl-function (lambda ,(doom--lambda-allow-other-keys arglist) ,@body)))
 
-(setplist 'doom--fn-crawl '(%2 2 %3 3 %4 4 %5 5 %6 6 %7 7 %8 8 %9 9))
-(defun doom--fn-crawl (data args)
-  (cond ((symbolp data)
-         (when-let*
-             ((pos (cond ((eq data '%*) 0)
-                         ((memq data '(% %1)) 1)
-                         ((get 'doom--fn-crawl data)))))
-           (when (and (= pos 1)
-                      (aref args 1)
-                      (not (eq data (aref args 1))))
-             (error "%% and %%1 are mutually exclusive"))
-           (aset args pos data)))
-        ((and (not (eq (car-safe data) 'fn!))
-              (or (listp data)
-                  (vectorp data)))
-         (let ((len (length data))
-               (i 0))
-           (while (< i len)
-             (doom--fn-crawl (elt data i) args)
-             (cl-incf i))))))
+(defun doom--fn-arglist (args)
+  (let ((argv (make-vector 10 nil))
+        (stack (list args)))
+    (while stack
+      (let ((data (pop stack)))
+        (cond ((symbolp data)
+               (when-let*
+                   ((pos (cond ((eq data '%*) 0)
+                               ((eq data '%) 1)
+                               ((memq data '(%1 %2 %3 %4 %5 %6 %7 %8 %9))
+                                (- (aref (symbol-name data) 1) ?0)))))
+                 (when (and (= pos 1) (aref argv 1) (not (eq data (aref argv 1))))
+                   (error "%% and %%1 are mutually exclusive"))
+                 (aset argv pos data)))
+              ((and (not (eq (car-safe data) 'fn!))
+                    (or (consp data) (vectorp data)))
+               (setq stack (append data stack))))))
+    (nconc
+     (cl-loop with seen for i downfrom 9 to 1
+              for sym = (aref argv i)
+              if (or seen sym) do (setq seen t)
+              and collect (or sym (intern (format "_%%%d" i))) into arglist
+              finally return (nreverse arglist))
+     (and (aref argv 0) '(&rest %*)))))
 
 (defmacro fn! (&rest args)
-  "Return an lambda with implicit, positional arguments.
+  "Return a lambda with implicit, positional arguments.
 
-The function's arguments are determined recursively from ARGS.  Each symbol from
-`%1' through `%9' that appears in ARGS is treated as a positional argument.
-Missing arguments are named `_%N', which keeps the byte-compiler quiet.  `%' is
-a shorthand for `%1'; only one of these can appear in ARGS.  `%*' represents
-extra `&rest' arguments.
+Each symbol `%1' through `%9' appearing anywhere in ARGS becomes a positional
+argument. Missing intermediate arguments are named `_%N' to keep the
+byte-compiler quiet. `%' is shorthand for `%1' (only one of the two may appear).
+`%*' collects extra `&rest' arguments.
 
-Instead of:
-
-  (lambda (a _ c &rest d)
-    (if a c (cadr d)))
-
-you can use this macro and write:
-
-  (fn! (if %1 %3 (cadr %*)))
-
-which expands to:
-
-  (lambda (%1 _%2 %3 &rest %*)
-    (if %1 %3 (cadr %*)))
-
-This macro was adapted from llama.el (see https://git.sr.ht/~tarsius/llama),
-minus font-locking and the outer function call, plus some minor optimizations."
-  `(lambda ,(let ((argv (make-vector 10 nil)))
-              (doom--fn-crawl args argv)
-              `(,@(let ((i (1- (length argv)))
-                        (n -1)
-                        sym arglist)
-                    (while (> i 0)
-                      (setq sym (aref argv i))
-                      (unless (and (= n -1) (null sym))
-                        (cl-incf n)
-                        (push (or sym (intern (format "_%%%d" i)))
-                              arglist))
-                      (cl-decf i))
-                    arglist)
-                ,@(and (aref argv 0) '(&rest %*))))
-     ,@args))
+Loosely inspired from llama.el (https://git.sr.ht/~tarsius/llama), minus
+font-locking and the outer function call."
+  (declare (doc-string 1) (side-effect-free t))
+  `(lambda ,(doom--fn-arglist args) ,@args))
 
 (defmacro cmd! (&rest body)
   "Returns (lambda () (interactive) ,@body)

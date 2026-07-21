@@ -134,17 +134,19 @@ file.")
          autoload-compute-prefixes
          (generated-autoload-load-name
           (abbreviate-file-name (file-name-sans-extension file))))
-    (let* ((module (doom-module-from-path file))
-           (module-enabled-p
-            (and (doom-module-active-p (car module) (cdr module))
-                 (doom-file-cookie-p file "if" t)))
+    (let* ((module? (and (doom-config-locate 'modules file) t))
+           (module (and module? (doom-module-from-path file)))
+           (enabled? (and module? (doom-module-active-p (car module) (cdr module))))
+           (skip? (or (and module?
+                           (not enabled?))
+                      (not (doom-file-cookie-p file "if" t))))
            ;; So `autoload-generate-file-autoloads' knows where to write it
            (target-buffer (current-buffer)))
       (save-excursion
-        (when module-enabled-p
+        (unless skip?
           (quiet! (autoload-generate-file-autoloads file target-buffer)))
-        (doom-loaddefs--scan-autodefs
-         file target-buffer module module-enabled-p)))))
+        (when module?
+          (doom-loaddefs--scan-autodefs file target-buffer module enabled?))))))
 
 (defun doom-loaddefs--read (files thunk &optional literal?)
   (let (seen forms)

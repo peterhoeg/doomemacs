@@ -1758,12 +1758,11 @@ and whether the line count of the buffer exceeds that matching entry in
 
 (add-hook 'doom-first-input-hook #'which-key-mode)
 (setq which-key-sort-order #'which-key-key-order-alpha
-      which-key-sort-uppercase-first nil
-      which-key-add-column-padding 1
-      which-key-max-display-columns nil
-      which-key-min-display-lines 7
-      which-key-side-window-slot -10
-      which-key-compute-remaps t
+      which-key-sort-uppercase-first nil ; jarring to separate keys by case
+      which-key-add-column-padding 1 ; less packed UI
+      which-key-min-display-lines 7  ; prevent short+wide which-key pane
+      which-key-side-window-slot -10 ; don't replace popups
+      which-key-compute-remaps t     ; show remapped commands
       which-key-ellipsis "…"
       which-key-allow-multiple-replacements t
       which-key-idle-delay 1.0
@@ -1793,9 +1792,6 @@ and whether the line count of the buffer exceeds that matching entry in
     (add-hook! 'doom-before-reload-hook
       (defun doom-reset-which-key-replacements-h ()
         (setq which-key-replacement-alist (get 'which-key-replacement-alist 'initial-value))))
-    ;; general improvements to which-key readability
-    (which-key-setup-side-window-bottom)
-    (setq-hook! 'which-key-init-buffer-hook line-spacing 3)
 
     (which-key-add-key-based-replacements doom-localleader-key "<localleader>")
     ;; Remove doom/ and +MODULE/ from commands. However, this requires upstream to

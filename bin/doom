@@ -281,7 +281,10 @@ SEE ALSO:
 ;;; * CLI Bootstrapper
 
 (defvar doom-cli-loaddefs-file
-  (doom-cache-dir (format "doom-cli-loaddefs.%s.el" doom-version))
+  (if-let* ((path (getenv "__DOOM_LOADDEFS_FILE")))
+      ;; DEPRECATED: will be removed in v3
+      (expand-file-name path)
+    (doom-cache-dir (format "doom-cli-loaddefs.%s.el" doom-version)))
   "Where to store Doom's CLI autoloads.")
 
 ;; There are a lot of CLIs, and some have expensive initialization, so best we

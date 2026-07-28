@@ -12,16 +12,19 @@ Profile directories are in the format {data-profiles-dir}/$NAME/@/$VERSION, for
 example: '~/.local/share/doom/_/@/0/'")
 
 (defvar doom-profile-load-path
-  (append
-   (when-let* ((path (getenv-internal "DOOMPROFILELOADPATH")))
-     (mapcar #'doom-path (split-string-and-unquote path path-separator)))
-   (list (doom-user-dir "profiles.el")
-         (expand-file-name
-          "doom-profiles.el" (or (getenv "XDG_CONFIG_HOME") "~/.config"))
-         (expand-file-name "~/.doom-profiles.el")
-         (doom-emacs-dir "profiles.el")
-         (doom-user-dir "profiles")
-         (doom-emacs-dir "profiles")))
+  (if-let* ((path (getenv-internal "DOOMPROFILELOADPATH")))
+      (mapcar #'doom-path (split-string-and-unquote path path-separator))
+    (let ((config-dir (or (getenv "XDG_CONFIG_HOME") "~/.config")))
+      `(,(expand-file-name "doom-profiles.el" config-dir)
+        ,(expand-file-name "~/.doom-profiles.el")
+        ;; $DOOMSDIR
+        ,(expand-file-name "doom/profiles.el" config-dir)
+        ,(expand-file-name "~/.doom.d/profiles.el")
+        ,(expand-file-name "doom/profiles/" config-dir)
+        ;; $EMACSDIR
+        ,(expand-file-name "emacs/profiles.el" config-dir)
+        ,(expand-file-name "~/.emacs.d/profiles.el")
+        ,(expand-file-name "emacs/profiles/" config-dir))))
   "A list of profile config files or directories that house implicit profiles.
 
 `doom-profiles-initialize' loads and merges all profiles defined in the above

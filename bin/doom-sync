@@ -88,7 +88,8 @@ OPTIONS:
     (unless (> (doom-cli-context-step context) 0)
       (print! (item "Using Emacs %s @ %s") emacs-version (path invocation-directory invocation-name)))
 
-    (when (doom-profiles-bootloadable-p)
+    (when (and (doom-profiles-bootloadable-p)
+               doom--noprofile)
       (call! '(profile sync "--all")))
 
     (let ((env-file

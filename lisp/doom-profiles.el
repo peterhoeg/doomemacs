@@ -51,9 +51,6 @@ Can be changed externally by setting $DOOMPROFILELOADFILE.")
 (defvar doom-profile-init-dir-name "init.d"
   "The subdirectory of `doom-profile-dir'")
 
-(defvar doom-profile-rcfile ".doomprofile"
-  "The filename for local user configuration of a Doom profile.")
-
 ;;; Profile storage variables
 (define-obsolete-variable-alias 'doom-profile-generators 'doom-profile-generate-functions "2.3.0")
 (defvar doom-profile-generate-functions
@@ -76,8 +73,6 @@ following suffixes have special behaviors:
 
 These functions are executed in the context of the
 `doom-profile-dir'/`doom-profile-init-dir-name' directory.")
-
-(defvar doom--profiles ())
 
 
 ;;

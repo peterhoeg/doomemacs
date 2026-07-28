@@ -48,11 +48,6 @@ list of paths or profile config files (semi-colon delimited on Windows).")
 
 Can be changed externally by setting $DOOMPROFILELOADFILE.")
 
-(defvar doom-profile-cache-file (doom-cache-dir "profiles.%s.el")
-  "Where Doom writes its interactive profile loader script.
-
-Can be changed externally by setting $DOOMPROFILELOADFILE.")
-
 (defvar doom-profile-init-dir-name "init.d"
   "The subdirectory of `doom-profile-dir'")
 

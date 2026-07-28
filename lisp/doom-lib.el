@@ -773,7 +773,7 @@ Can chain these comparisons by adding more (COMPn Vn) pairs afterwards.
 The closure is wrapped in `cl-function', meaning ARGLIST will accept anything
 `cl-defun' will. Implicitly adds `&allow-other-keys' if `&key' is present in
 ARGLIST."
-  (declare (indent defun) (doc-string 1) (pure t) (side-effect-free t))
+  (declare (indent defun) (doc-string 1) (side-effect-free t))
   `(cl-function (lambda ,(doom--lambda-allow-other-keys arglist) ,@body)))
 
 (defun doom--fn-arglist (args)
@@ -818,7 +818,7 @@ font-locking and the outer function call."
   "Returns (lambda () (interactive) ,@body)
 A factory for quickly producing interaction commands, particularly for keybinds
 or aliases."
-  (declare (doc-string 1))
+  (declare (doc-string 1) (side-effect-free t))
   `(lambda (&rest _) (interactive) ,@body))
 
 (defmacro cmd!! (command &optional arg &rest args)
@@ -827,7 +827,7 @@ or aliases."
 Like `cmd!', but allows you to change `current-prefix-arg' or pass arguments to
 COMMAND. This macro is meant to be used as a target for keybinds (e.g. with
 `define-key' or `map!')."
-  (declare (doc-string 1) (pure t) (side-effect-free t))
+  (declare (doc-string 1) (side-effect-free t))
   `(lambda (arg &rest _) (interactive "P")
      (let ((current-prefix-arg (or ,arg arg)))
        (,(if args

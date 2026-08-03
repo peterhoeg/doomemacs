@@ -616,8 +616,8 @@ exist, and `org-link' otherwise."
            key
            :complete (lambda ()
                        (if requires (mapc #'require (ensure-list requires)))
-		       (doom-docs--relative-path (doom-docs--read-link-path key (funcall dir-fn))
-						 (funcall dir-fn)))
+                       (doom-docs--relative-path (doom-docs--read-link-path key (funcall dir-fn))
+                                                 (funcall dir-fn)))
            :follow   (lambda (link)
                        (org-link-open-as-file (expand-file-name link (funcall dir-fn)) nil))
            :face     (lambda (link)
@@ -644,12 +644,12 @@ exist, and `org-link' otherwise."
 (let (cache)
   (defun doom-docs--help-echo-fn (_window object pos)
     (if (equal (car cache) (cons object pos))
-	(cdr cache)
+        (cdr cache)
       (let ((link (with-current-buffer object
-		    (save-excursion (goto-char pos) (org-element-context)))))
-	(cdr (setq cache
-		   (cons (cons object (org-element-property :begin link))
-			 (doom-docs--help-string link))))))))
+                    (save-excursion (goto-char pos) (org-element-context)))))
+        (cdr (setq cache
+                   (cons (cons object (org-element-property :begin link))
+                         (doom-docs--help-string link))))))))
 
 (defun doom-docs--help-string (link)
   (pcase (org-element-property :type link)
@@ -657,14 +657,14 @@ exist, and `org-link' otherwise."
      (concat
       "The key sequence: "
       (propertize (doom-docs--describe-kbd (org-element-property :path link))
-		  'face 'help-key-binding)))
+                  'face 'help-key-binding)))
     ("cmd"
      (concat
       "The command "
       (propertize (org-element-property :path link) 'face 'font-lock-function-name-face)
       " can be invoked with the key sequence "
       (propertize (doom-docs--command-keys (org-element-property :path link))
-		  'face 'help-key-binding)))
+                  'face 'help-key-binding)))
     ("doom-package"
      (concat
       (propertize "Emacs package " 'face 'bold)
@@ -672,9 +672,9 @@ exist, and `org-link' otherwise."
       ", currently "
       (cond
        ((featurep (intern-soft (org-element-property :path link)))
-	(propertize "installed and loaded" 'face 'success))
+        (propertize "installed and loaded" 'face 'success))
        ((locate-library (org-element-property :path link))
-	(propertize "installed but not loaded" 'face 'warning))
+        (propertize "installed but not loaded" 'face 'warning))
        (t (propertize "not installed" 'face 'error )))))
     ("doom-module"
      (concat
@@ -682,21 +682,21 @@ exist, and `org-link' otherwise."
       (propertize (org-element-property :path link) 'face 'font-lock-keyword-face)
       ", currently "
       (cl-destructuring-bind (&key category module flag)
-	  (doom-docs--read-module-spec (org-element-property :path link))
-	(cond
-	 ((doom-module-active-p category module)
-	  (propertize "enabled" 'face 'success))
-	 ((and category (doom-module-locate-path (cons category module)))
-	  (propertize "disabled" 'face 'error))
-	 (t (propertize "unknown" 'face '(bold error)))))))
+          (doom-docs--read-module-spec (org-element-property :path link))
+        (cond
+         ((doom-module-active-p category module)
+          (propertize "enabled" 'face 'success))
+         ((and category (doom-module-locate-path (cons category module)))
+          (propertize "disabled" 'face 'error))
+         (t (propertize "unknown" 'face '(bold error)))))))
     ("doom-executable"
      (concat
       (propertize "System executable " 'face 'bold)
       (propertize (org-element-property :path link) 'face 'font-lock-keyword-face)
       ", "
       (if (executable-find (org-element-property :path link))
-	  (propertize "found" 'face 'success)
-	(propertize "not found" 'face 'error))
+          (propertize "found" 'face 'success)
+        (propertize "not found" 'face 'error))
       " on PATH"))))
 
 ;;;###autoload
@@ -704,20 +704,20 @@ exist, and `org-link' otherwise."
   "TODO"
   (let ((keystr (doom-docs-link-read-desc-at-point default context)))
     (dolist (key `(("<leader>" . ,doom-leader-key)
-		   ("<localleader>" . ,doom-localleader-key)
-		   ("<prefix>" . ,(if (bound-and-true-p evil-mode)
-				      (concat doom-leader-key " u")
-				    "C-u"))
-		   ("<help>" . ,(if (bound-and-true-p evil-mode)
-				    (concat doom-leader-key " h")
-				  "C-h"))
-		   ("\\<M-" . "alt-")
-		   ("\\<S-" . "shift-")
-		   ("\\<s-" . "super-")
-		   ("\\<C-" . "ctrl-")))
+                   ("<localleader>" . ,doom-localleader-key)
+                   ("<prefix>" . ,(if (bound-and-true-p evil-mode)
+                                      (concat doom-leader-key " u")
+                                    "C-u"))
+                   ("<help>" . ,(if (bound-and-true-p evil-mode)
+                                    (concat doom-leader-key " h")
+                                  "C-h"))
+                   ("\\<M-" . "alt-")
+                   ("\\<S-" . "shift-")
+                   ("\\<s-" . "super-")
+                   ("\\<C-" . "ctrl-")))
       (setq keystr
-	    (replace-regexp-in-string (car key) (cdr key)
-				      keystr t t)))
+            (replace-regexp-in-string (car key) (cdr key)
+                                      keystr t t)))
     keystr))
 
 (defun doom-docs--read-module-spec (module-spec-str)

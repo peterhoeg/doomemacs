@@ -24,18 +24,21 @@ in modules and ~$DOOMDIR~.
 (add-hook! 'some-mode-hook #'enable-something)
 
 ;; Adding many-to-many functions to hooks
-(add-hook! some-mode #'enable-something #'and-another)
-(add-hook! some-mode '(enable-something and-another))
+(add-hook! 'some-mode-hook #'enable-something #'and-another)
+(add-hook! 'some-mode-hook '(enable-something and-another))
 (add-hook! '(one-mode-hook second-mode-hook) #'enable-something)
-(add-hook! (one-mode second-mode) #'enable-something)
 
 ;; Appending and local hooks
-(add-hook! (one-mode second-mode) :append #'enable-something)
-(add-hook! (one-mode second-mode) :local #'enable-something)
+(add-hook! '(one-mode-hook second-mode-hook) :append #'enable-something)
+(add-hook! '(one-mode-hook second-mode-hook) :local #'enable-something)
 
 ;; With arbitrary forms
-(add-hook! (one-mode second-mode) (setq v 5) (setq a 2))
-(add-hook! (one-mode second-mode) :append :local (setq v 5) (setq a 2))
+(add-hook! '(one-mode-hook second-mode-hook)
+  (setq v 5)
+  (setq a 2))
+(add-hook! '(one-mode-hook second-mode-hook) :append :local
+  (setq v 5)
+  (setq a 2))
 
 ;; Inline named hook functions
 (add-hook! '(one-mode-hook second-mode-hook)
@@ -536,16 +539,15 @@ These are side-by-side comparisons, showing how to bind keys with and without
 (remove-hook! 'some-mode-hook #'enable-something)
 
 ;; Removing N functions from M hooks
-(remove-hook! some-mode #'enable-something #'and-another)
-(remove-hook! some-mode #'(enable-something and-another))
+(remove-hook! 'some-mode-hook #'enable-something #'and-another)
+(remove-hook! 'some-mode-hook #'(enable-something and-another))
 (remove-hook! '(one-mode-hook second-mode-hook) #'enable-something)
-(remove-hook! (one-mode second-mode) #'enable-something)
 
 ;; Removing buffer-local hooks
-(remove-hook! (one-mode second-mode) :local #'enable-something)
+(remove-hook! '(one-mode-hook second-mode-hook) :local #'enable-something)
 
 ;; Removing arbitrary forms (must be exactly the same as the definition)
-(remove-hook! (one-mode second-mode) (setq v 5) (setq a 2))
+(remove-hook! '(one-mode-hook second-mode-hook) (setq v 5) (setq a 2))
 #+end_src
 
 * setq-hook!

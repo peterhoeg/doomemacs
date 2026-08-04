@@ -900,19 +900,6 @@ exist, and `org-link' otherwise."
   "TODO"
   (doom/describe-package (intern-soft pkg)))
 
-(defun doom-docs--executable-link-activate-fn (start end executable _bracketed-p)
-  (when buffer-read-only
-    (let ((found (executable-find executable)))
-      (add-text-properties
-       start end
-       (list 'display
-             (concat
-              (nerd-icons-octicon "nf-oct-terminal" ; ""
-                                  :face (if found 'success 'error))
-              " "
-              (propertize executable
-                          'face (if found 'org-verbatim 'shadow))))))))
-
 
 ;;
 ;;; * Org config
@@ -972,11 +959,6 @@ exist, and `org-link' otherwise."
      :follow #'doom-docs--module-link-follow-fn
      :activate-func #'doom-docs--module-link-activate-fn
      :help-echo #'doom-docs--help-echo-fn)
-    (org-link-set-parameters
-     "doom-executable"
-     :activate-func #'doom-docs--executable-link-activate-fn
-     :help-echo #'doom-docs--help-echo-fn
-     :face 'org-verbatim)
     (org-link-set-parameters
      "doom-ref"
      :follow (lambda (link)

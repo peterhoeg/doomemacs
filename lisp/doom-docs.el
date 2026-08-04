@@ -109,6 +109,15 @@
                       (t "doom-help:"))))
       :align right))))
 
+(defvar doom-docs-notice-types
+  '(("wip"     . "󱌣")
+    ("tip"     . "󰐃")
+    ("kudos"   . "󰔓")
+    ("aside"   . "󰟶")
+    ("notice"  . "󰥔")
+    ("warning" . ""))
+  "An alist mapping Doom notice types to icons.")
+
 
 ;;
 ;;; * Helpers
@@ -386,6 +395,44 @@
                                   '(display))))
       (org-element-cache-refresh (point)))))
 
+(defun doom-docs--prettify-notices-h ()
+  "Render notices with an icon and indentation."
+  (org-with-wide-buffer
+   (goto-char (point-min))
+   (remove-overlays (point-min) (point-max) 'doom-docs t)
+   (when doom-docs-minor-mode
+     (let ((re (format "^\\( *\\)#\\+begin_quote +%s"
+                       (regexp-opt (mapcar #'car doom-docs-notice-types)
+                                   t))))
+       (while (re-search-forward re nil t)
+         (unless (doom-docs--visible-p (point))
+           (let* ((icon (propertize (format " %s "
+                                            (cdr (assoc (match-string 2)
+                                                        doom-docs-notice-types)))
+                                    'face 'org-quote))
+                  (prefix (propertize " " 'display
+                                      `(space :width ,(if (fboundp 'string-pixel-width)  ; Emacs 29+
+                                                          (list (string-pixel-width icon))
+                                                        (1+ (string-width icon))))
+                                      'face 'org-quote))
+                  (indent (match-string-no-properties 1))
+                  (begoff (length indent))
+                  (beg (save-excursion (goto-char (match-end 1))
+                                       (point-at-bol 2)))
+                  (end (save-excursion
+                         (save-match-data
+                           (search-forward (concat indent "#+end_quote") nil)
+                           (point-at-bol)))))
+             ;; Using `before-string' instead of `line-prefix' because
+             ;; `org-indent-mode' will highjack the latter.
+             (goto-char beg)
+             (while (and (< (point) end)
+                         (not (eobp)))
+               (let ((ov (make-overlay (point-at-bol) (+ (point-at-bol) begoff))))
+                 (overlay-put ov 'after-string (if (= (point) beg) icon prefix))
+                 (overlay-put ov 'doom-docs t))
+               (forward-line 1)))))))))
+
 
 ;;
 ;;; * `doom-docs-minor-mode'
@@ -455,22 +502,14 @@ This primes `org-mode' for reading."
            #'doom-docs--hide-drawers-h
            ;; #'doom-docs--hide-stars-h
            #'doom-docs--expand-macros-h
-           #'doom-docs--hide-src-blocks-h)
+           #'doom-docs--hide-src-blocks-h
+           #'doom-docs--prettify-notices-h)
 
 
 ;;
 ;;; * `doom-docs-mode'
 
-(defvar doom-docs-font-lock-keywords
-  '(("^\\( *\\)#\\+begin_quote\n\\1 \\([󰝗󱌣󰐃󰔓󰟶󰥔]\\) "
-     2 (pcase (match-string 2)
-         ("󰝗" 'font-lock-comment-face)
-         ("󱌣" 'font-lock-comment-face)
-         ("󰐃" 'error)
-         ("󰔓" 'success)
-         ("󰟶" 'font-lock-keyword-face)
-         ("󰥔" 'font-lock-constant-face)
-         ("" 'warning))))
+(defvar doom-docs-font-lock-keywords '()
   "Extra font-lock keywords for Doom documentation.")
 
 (defvar doom-docs-mode-map

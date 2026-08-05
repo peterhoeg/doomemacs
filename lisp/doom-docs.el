@@ -577,6 +577,9 @@ This primes `org-mode' for reading."
                 (append '((:eval . "no") (:tangle . "no"))
                         org-babel-default-header-args)
                 save-place-ignore-files-regexp ".")
+    (when (featurep 'org-modern)
+      (setq-local org-modern-table nil
+                  org-modern-block-name nil))
 
     (font-lock-add-keywords nil doom-docs-font-lock-keywords)
     (unless org-inhibit-startup

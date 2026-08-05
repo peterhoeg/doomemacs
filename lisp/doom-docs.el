@@ -481,7 +481,10 @@ depending.")
   "Hides metadata, tags, & drawers and activates all org-mode prettifications.
 This primes `org-mode' for reading."
   :lighter " Doom Docs"
-  :after-hook (org-restart-font-lock)
+  :after-hook (progn
+                (org-restart-font-lock)
+                (if (doom-docs--visible-p (point))
+                    (goto-char (org-find-visible))))
   (unless (derived-mode-p 'org-mode)
     (user-error "Not an org mode buffer"))
   (when (fboundp 'org-fold-add-folding-spec)  ; Org 9.6+

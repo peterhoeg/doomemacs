@@ -18,6 +18,9 @@
 ;;
 ;;; Code:
 
+;;
+;;; * Variables
+
 ;;;###autoload
 (defvar doom-docs-dir (doom-emacs-dir "docs/")
   "Where Doom's documentation files are stored. Must end with a slash.")
@@ -40,7 +43,6 @@
     ("doom-report"             . "https://github.com/doomemacs/core/issues/new/choose")
     ("doom-suggest-edit"       . "id:31f5a61d-d505-4ee8-9adb-97678250f4e2")
     ("doom-suggest-faq"        . "id:aa28b732-0512-49ed-a47b-f20586c0f051")
-    ("github"                  . "https://github.com/%s")
 
     ;; TODO: Implement later, once docs are generalized
     ;; ("github-release"          . (lambda (link)
@@ -214,7 +216,7 @@ Passes PLIST to appropriate nerd-icons-* function."
                     (format "LINK: %s" link))
      'mouse-face 'highlight)))
 
-(setq doom-docs--header-link-keymap
+(defvar doom-docs--header-link-keymap
   (let ((km (make-sparse-keymap)))
     (define-key km [header-line mouse-2] 'doom-docs--open-header-link)
     (define-key km [mouse-2] 'doom-docs--open-header-link)
@@ -550,9 +552,6 @@ This primes `org-mode' for reading."
     (define-key map "\C-c\C-e" #'read-only-mode)
     map))
 
-(defun doom-docs--toggle-read-only-h ()
-  (doom-docs-minor-mode (if buffer-read-only +1 -1)))
-
 ;;;###autoload
 (define-derived-mode doom-docs-mode org-mode "Doom Manual"
   "A derivative of `org-mode' for Doom's documentation files."
@@ -602,6 +601,9 @@ This primes `org-mode' for reading."
 ;;     (setq-local org-glossary-global-terms (doom-glob doom-docs-dir "appendix.org"))
 ;;     (org-glossary-mode +1)))
 ;; (add-hook 'doom-docs-org-mode-hook #'doom-docs-init-glossary-h)
+
+(defun doom-docs--toggle-read-only-h ()
+  (doom-docs-minor-mode (if buffer-read-only +1 -1)))
 
 ;;;###autoload
 (defun doom-docs-read-only-h ()

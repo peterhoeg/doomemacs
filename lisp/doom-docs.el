@@ -122,6 +122,21 @@
 ;;
 ;;; * Helpers
 
+(defun doom-docs--icon (icon label &rest plist)
+  "Prefix LABEL with ICON (from nerd-icons).
+
+Passes PLIST to appropriate nerd-icons-* function."
+  (concat
+   (when (fboundp 'nerd-icons-octicon)
+     (cond ((string-prefix-p "nf-oct-" icon)
+            (concat (apply #'nerd-icons-octicon icon plist)
+                    " "))
+           ((string-prefix-p "nf-md-" icon)
+            (concat (apply #'nerd-icons-mdicon icon plist)
+                    " "))))
+   label))
+
+
 ;;; ** Navbar
 
 (defun doom-docs--make-header ()
@@ -158,11 +173,7 @@
 
 (defun doom-docs--make-header-link (spec)
   "Create a header link according to SPEC."
-  (let ((icon (and (plist-get spec :icon)
-                   (with-demoted-errors "DOCS ERROR: %s"
-                     (funcall (or (plist-get spec :icon-function)
-                                  #'nerd-icons-mdicon)
-                              (plist-get spec :icon)))))
+  (let ((icon (plist-get spec :icon))
         (label (pcase (plist-get spec :label)
                  ((and (pred functionp) lab)
                   (funcall lab))
@@ -175,14 +186,13 @@
                  link))))
     (propertize
      (concat
-      (and icon
-           (propertize icon 'face
-                       (cadr (or (plist-member spec :icon-face)
-                                 (plist-member spec :face)))))
-      (and icon label " ")
-      (and label
-           (propertize label 'face (cadr (or (plist-get spec :face)
-                                             '(nil link))))))
+      (doom-docs--icon
+       icon
+       (and label
+            (propertize label 'face (cadr (or (plist-get spec :face)
+                                              '(nil link)))))
+       :face (cadr (or (plist-member spec :icon-face)
+                       (plist-member spec :face)))))
      'doom-docs-link link
      'keymap doom-docs--header-link-keymap
      'help-echo (or (plist-get spec :help-echo)
@@ -794,24 +804,25 @@ exist, and `org-link' otherwise."
     (add-text-properties
      start end
      (list 'display
-           (concat (nerd-icons-mdicon "nf-md-function") ; "󰊕"
-                   " " (propertize fn
-                                   'face
-                                   (if (fboundp (intern fn))
-                                       'font-lock-function-name-face
-                                     'shadow)))))))
+           (doom-docs--icon
+            "nf-md-function"  ; "󰊕"
+            (propertize fn
+                        'face
+                        (if (fboundp (intern fn))
+                            'font-lock-function-name-face
+                          'shadow)))))))
 
 (defun doom-docs--face-link-activate-fn (start end face _bracketed-p)
   (when buffer-read-only
     (add-text-properties
      start end
      (list 'display
-           (concat (nerd-icons-mdicon "nf-md-format_text") ; "󰊄"
-                   " " (propertize face
-                                   'face
-                                   (if (facep (intern face))
-                                       (intern face)
-                                     'shadow)))))))
+           (doom-docs--icon "nf-md-format_text"  ; "󰊄"
+                            (propertize face
+                                        'face
+                                        (if (facep (intern face))
+                                            (intern face)
+                                          'shadow)))))))
 
 (defun doom-docs--command-keys (command)
   "Convert command reference TEXT to key binding representation."
@@ -869,10 +880,9 @@ exist, and `org-link' otherwise."
          start end
          (list 'face overall-face
                'display
-               (concat
-                (nerd-icons-octicon "nf-oct-stack" ; ""
-                                    :face icon-face)
-                " " module-path)))))))
+               (doom-docs--icon "nf-oct-stack"  ; ""
+                                module-path
+                                :face icon-face)))))))
 
 (defun doom-docs--package-link-activate-fn (start end package _bracketed-p)
   (if (not buffer-read-only)
@@ -891,10 +901,8 @@ exist, and `org-link' otherwise."
        start end
        (list 'face overall-face
              'display
-             (concat
-              (nerd-icons-octicon "nf-oct-package" ; ""
-                                  :face icon-face)
-              " " package))))))
+             (doom-docs--icon "nf-oct-package"  ; ""
+                              package :face icon-face))))))
 
 (defun doom-docs--package-link-follow-fn (pkg _prefixarg)
   "TODO"

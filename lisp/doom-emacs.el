@@ -278,12 +278,6 @@ multiple frames focused at once)."
       (cons 'custom-theme-directory
             (delq 'custom-theme-directory custom-theme-load-path)))
 
-;; If a packages doesn't use `user-emacs-directory' or `locate-user-emacs-file'
-;; to set their file/dir variables, then we need to set them ourselves to avoid
-;; littering in ~/.emacs.d/.
-(setq desktop-dirname  (doom-profile-state-dir t "desktop")
-      pcache-directory (doom-profile-cache-dir t "pcache/"))
-
 ;; Write custom.el settings to $DOOMDIR/custom.el instead of $EMACSDIR/init.el,
 ;; allowing users to version control them and not interfere with Doom init.
 (setq custom-file (doom-user-dir "custom.el"))
@@ -1532,6 +1526,10 @@ with `set-indent-vars!'."
                 (gc-cons-percentage 1.0))
             (with-silent-modifications
               (comint-truncate-buffer)))))))
+
+
+;;;###package desktop
+(setq desktop-dirname (doom-profile-state-dir t "desktop"))
 
 
 ;;;###package ediff

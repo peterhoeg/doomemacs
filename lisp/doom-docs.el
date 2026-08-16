@@ -469,7 +469,7 @@ Returns PROP if specified, the context otherwise."
            (let* ((icon (propertize (format " %s "
                                             (cdr (assoc (match-string 2)
                                                         doom-docs-notice-types)))
-                                    'face '(:inherit org-quote :underline nil)))
+                                    'face '(:inherit (org-quote default) :underline nil)))
                   (prefix (propertize " " 'display
                                       `(space :width ,(if (fboundp 'string-pixel-width)  ; Emacs 29+
                                                           (list (string-pixel-width icon))

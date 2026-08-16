@@ -770,25 +770,36 @@ This primes `org-mode' for reading."
 
 (defun doom-docs-link--repo-follow (link)
   (browse-url
-   (letf! (defun repo (link suffix subexp)
-            (let (user repo)
-              (when-let* ((match (match-string subexp link)))
-                (if (string-match-p "/" match)
-                    (let ((seg (split-string match "/")))
-                      (setq user (car seg)
-                            repo (cadr seg)))
-                  (setq repo match)))
-              (doom-docs--repo-url user repo (file-name-concat suffix (match-string 2 link)))))
+   (letf! (defun repo (link &rest suffix)
+            (doom-docs--repo-url
+             (save-match-data
+               (if (and (stringp link) (string-match-p "/" link))
+                   (split-string link "/")
+                 (list nil link)))
+             nil (if suffix (apply #'file-name-concat suffix))))
      (save-match-data
-       (cond ((string-match "^\\([^/]+\\(?:/[^/]+\\)?\\)?#\\([0-9]+\\(?:#.*\\)?\\)" link)
-              (repo link "issues" 1))
-             ((string-match "^\\([^/]+\\(?:/[^/]+\\)?@\\)?\\([a-f0-9]\\{7,\\}\\(?:#.*\\)?\\)" link)
-              (repo link "commit" 1))
-             ((string-match "^\\([^/]+\\(?:/[^/]+\\)?@\\)?\\(v[0-9].*\\)" link)
-              (repo link "releases/tag" 1))
-             ((string-match "^\\([^/]+\\(?:/[^/]+\\)?\\)" link)
-              (repo link nil 1))
-             ((user-error "Invalid doom-rev link: %S" link)))))))
+       (cond
+        ;; ^[[user/]repo]#123[#issuecomment-4701619356]$
+        ((string-match "^\\([^/]+\\(?:/[^/]+\\)?\\)?#\\([0-9]+\\(?:#.*\\)?\\)" link)
+         (repo (match-string 1 link) "issues" (match-string 2 link)))
+        ;; ^[user/]repo[@rev]:path/to/file[#L303]$
+        ((string-match "^\\([^/]+\\(?:/[^/@]+\\)?\\)\\(?:@\\([^:]+\\)\\)?:\\(.+\\)$" link)
+         (repo (match-string 1 link) "blob"
+               (or (match-string 2 link)
+                   (let ((ref (doom-call-process "git" "describe" "--tags" "--abbrev=0")))
+                     (if (zerop (car ref)) (cdr ref) "HEAD")))
+               (match-string 3 link)))
+        ;; ^[[user/]repo@]v0.24$
+        ((string-match "^\\(?:\\([^/]+\\(?:/[^/]+\\)?\\)@\\)?\\(v[0-9][0-9.]*\\)" link)
+         ;; TODO: Redirect to changelog later
+         (repo (match-string 1 link) "releases/tag" (match-string 2 link)))
+        ;; ^[[user/]repo@]a1b2c3d4e$
+        ((string-match "^\\(?:\\([^/]+\\(?:/[^/]+\\)?\\)@\\)?\\([a-f0-9]\\{7,\\}\\)" link)
+         (repo (match-string 1 link) "commit" (match-string 2 link)))
+        ;; ^[user/]repo[[#?]...]$
+        ((string-match "^\\([^/]+\\(?:/[^/]+\\)?\\)\\([#?].+\\)?$" link)
+         (repo (match-string 1 link) (match-string 2 link)))
+        ((user-error "Invalid repo link: %S" link)))))))
 
 
 ;;; ** package:*

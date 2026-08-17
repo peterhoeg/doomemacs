@@ -4,17 +4,7 @@
  (version . "2.2.2")
  (homepage . "https://doomemacs.org")
 
- (commit
-  (preset doom-conventional-commits +modules)
-  (scopes "cli" "lib"
-          (docs
-           "install"
-           (lambda (scope _plist)
-             "Allow any filename in docs/* as a scope for docs commits."
-             (member
-              scope (doom-files-in (doom-path (dir!) "../docs")
-                                   :match "\\.org$"
-                                   :map #'file-name-base))))))
+ (commits (style doom) (scopes "cli" "lib" "docs"))
 
  (make
   ("LICENSE"

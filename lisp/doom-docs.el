@@ -953,7 +953,7 @@ This primes `org-mode' for reading."
                                    (string-prefix-p "\\\\" path)))
                            (file-exists-p path))
                           'org-link
-                        '(error org-link))))
+                        '(:inherit (error org-link) :underline nil))))
 
       (org-link-set-parameters
        "var"

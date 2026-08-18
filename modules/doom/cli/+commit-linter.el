@@ -385,7 +385,7 @@ print the original message again when ECHO-MSG is non-nil."
                          (or (and (stringp rule)
                                   (string= rule scope))
                              (and (functionp rule)
-                                  (funcall rule scope plist))
+                                  (funcall rule config plist))
                              (and (listp rule)
                                   (eq type (car rule))
                                   (seq-find #'check-rule (cdr rule)))))
@@ -507,11 +507,11 @@ print the original message again when ECHO-MSG is non-nil."
 
 (cl-defun doom-commit-has-valid-module-scope (_config (&key root scopes &allow-other-keys))
   "Checks if SCOPE is a valid module scope."
-  (not (cl-loop for scope in scopes
-                if (doom-glob
-                    root "modules" (if (string-prefix-p ":" scope)
-                                       (format "%s" (substring scope 1))
-                                     (format "*/%s" scope)))
-                return t)))
+  (cl-loop for scope in scopes
+           if (doom-glob
+               root "modules" (if (string-prefix-p ":" scope)
+                                  (format "%s" (substring scope 1))
+                                (format "*/%s" scope)))
+           return t))
 
 ;;; commit-linter.el ends here

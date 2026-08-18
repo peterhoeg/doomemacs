@@ -938,6 +938,23 @@ This primes `org-mode' for reading."
                 (funcall (or (command-remapping fn) fn)
                          (or (intern-soft path)
                              (user-error "Can't find documentation for %S" path))))))
+
+      ;; This is repeated from the :lang org module in case the module is
+      ;; disabled.
+      (org-link-set-parameters
+       "file" :face (lambda (path)
+                      (if (or
+                           ;; file uris is not a valid path on windows
+                           ;; ref https://lists.gnu.org/archive/html/bug-gnu-emacs/2024-05/threads.html#00729
+                           ;; emacs <= 29 crashes for (file-exists-p "file://whatever")
+                           (if (featurep :system 'windows)
+                               (or (string-prefix-p "//" path)
+                                   ;; filter out network shares on windows (slow)
+                                   (string-prefix-p "\\\\" path)))
+                           (file-exists-p path))
+                          'org-link
+                        '(error org-link))))
+
       (org-link-set-parameters
        "var"
        :follow (call #'describe-variable)

@@ -282,6 +282,7 @@ multiple frames focused at once)."
 ;; allowing users to version control them and not interfere with Doom init.
 (setq custom-file (doom-user-dir "custom.el"))
 
+;; REVIEW: Fix this upstream
 (define-advice en/disable-command (:around (fn &rest args) write-to-data-dir)
   "Save safe-local-variables to `custom-file' instead of `user-init-file'.
 

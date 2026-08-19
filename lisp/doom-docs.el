@@ -610,6 +610,7 @@ This primes `org-mode' for reading."
                 org-startup-numerated t
                 org-startup-indented t
                 org-startup-with-inline-images t
+                org-startup-folded 'show3levels
                 org-display-remote-inline-images 'cache
                 ;; Don't highlight LaTeX in Doom docs. We won't need it and it
                 ;; interferes with shell command snippets that may contain a $.
@@ -651,8 +652,7 @@ This primes `org-mode' for reading."
          (org-num-mode +1))
        (unless (or (bound-and-true-p org-inhibit-startup-visibility-stuff)
                    (not org-startup-folded))
-         (dlet ((org-startup-folded 'content)
-                org-cycle-hide-drawer-startup)
+         (dlet (org-cycle-hide-drawer-startup)
            (org-set-startup-visibility)))))
     (add-hook 'read-only-mode-hook #'doom-docs--toggle-read-only-h nil 'local)))
 

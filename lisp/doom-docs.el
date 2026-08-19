@@ -501,7 +501,8 @@ Returns PROP if specified, the context otherwise."
     (flycheck-mode . -1)
     (spell-fu-mode . -1)
     (mixed-pitch-mode . -1)
-    (variable-pitch-mode . -1))
+    (variable-pitch-mode . -1)
+    (indent-bars-mode . -1))
   "An alist of minor modes to toggle with `doom-docs-minor-mode'.
 
 The CAR is the minor mode symbol, and CDR should be either +1 or -1,

@@ -613,11 +613,21 @@ This primes `org-mode' for reading."
                 (append '((:eval . "no") (:tangle . "no"))
                         org-babel-default-header-args)
                 save-place-ignore-files-regexp "."
+                org-startup-numerated t
+                org-startup-indented t
                 org-startup-with-inline-images t
-                org-startup-with-link-previews t)
+                org-display-remote-inline-images 'cache
+                ;; Don't highlight LaTeX in Doom docs. We won't need it and it
+                ;; interferes with shell command snippets that may contain a $.
+                org-highlight-latex-and-related nil)
+
     (when (featurep 'org-modern)
       (setq-local org-modern-table nil
                   org-modern-block-name nil))
+
+    ;; Re-parse buffer options so the above vars can be overridden by #+STARTUP
+    ;; et co.
+    (org-set-regexps-and-options)
 
     ;; Ensure links are fully localized to doom-docs-mode buffers.
     (mapc #'make-local-variable '(org-link-types-re
@@ -629,24 +639,24 @@ This primes `org-mode' for reading."
     (org-link-make-regexps)
     (if (featurep 'org-element) (org-element-update-syntax))
 
-    ;; Don't highlight LaTeX in Doom docs. We won't need it.
-    (dlet (org-highlight-latex-and-related)
-      (org-compute-latex-and-related-regexp))
-
     (unless org-inhibit-startup
-      (unless (local-variable-p 'org-startup-with-inline-images)
-        (setq org-display-remote-inline-images 'cache)
-        (org-display-inline-images))
-      (unless (local-variable-p 'org-startup-indented)
-        (org-indent-mode +1))
-      (unless (local-variable-p 'org-startup-numerated)
-        (when (bound-and-true-p org-num-mode)
-          (org-num-mode -1))
-        (org-num-mode +1))
-      (unless (local-variable-p 'org-startup-folded)
-        (let ((org-startup-folded 'content)
-              org-cycle-hide-drawer-startup)
-          (org-set-startup-visibility))))
+      (org-unmodified
+       (when org-startup-with-inline-images
+         (quiet!  ; silence image downloading messages
+           (if (fboundp 'org-link-preview)
+               (org-link-preview '(16))
+             (org-display-inline-images))))
+       (when org-startup-indented
+         (org-indent-mode +1))
+       (when org-startup-numerated
+         (when (bound-and-true-p org-num-mode)
+           (org-num-mode -1))
+         (org-num-mode +1))
+       (unless (or (bound-and-true-p org-inhibit-startup-visibility-stuff)
+                   (not org-startup-folded))
+         (dlet ((org-startup-folded 'content)
+                org-cycle-hide-drawer-startup)
+           (org-set-startup-visibility)))))
     (add-hook 'read-only-mode-hook #'doom-docs--toggle-read-only-h nil 'local)))
 
 (defun doom-docs--toggle-read-only-h ()

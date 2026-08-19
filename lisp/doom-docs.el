@@ -613,6 +613,9 @@ This primes `org-mode' for reading."
                 (append '((:eval . "no") (:tangle . "no"))
                         org-babel-default-header-args)
                 save-place-ignore-files-regexp "."
+                org-todo-keyword-faces
+                '(("TODO" . (bold default))
+                  ("DONE" . shadow))
                 org-startup-numerated t
                 org-startup-indented t
                 org-startup-with-inline-images t
@@ -625,9 +628,16 @@ This primes `org-mode' for reading."
       (setq-local org-modern-table nil
                   org-modern-block-name nil))
 
-    ;; Re-parse buffer options so the above vars can be overridden by #+STARTUP
-    ;; et co.
-    (org-set-regexps-and-options)
+    ;; HACK: Due to some backwards compatibility cludge in
+    ;;   `org-set-regexps-and-options', it tries to read the default value of
+    ;;   `org-todo-keywords', which requires this effort to temporarily change
+    ;;   its value (to use a simpler value in doom-docs-mode buffers).
+    (let ((old-value (copy-sequence (default-value 'org-todo-keywords))))
+      (setq-default org-todo-keywords '((sequence "TODO" "DONE")))
+      ;; ...and-parse buffer options so the above vars can be overridden by
+      ;; #+STARTUP et co.
+      (unwind-protect (org-set-regexps-and-options)
+        (setq-default org-todo-keywords old-value)))
 
     ;; Ensure links are fully localized to doom-docs-mode buffers.
     (mapc #'make-local-variable '(org-link-types-re

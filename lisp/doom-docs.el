@@ -714,7 +714,7 @@ This primes `org-mode' for reading."
                    (propertize "<unknown>" 'face 'font-lock-doc-face)))))
      " ")))
 
-(defun doom-docs-link-activate-func (beg end target _)
+(defun doom-docs-link-activate-func (beg end target bracket?)
   (when org-descriptive-links
     (let* ((context (org-element-context (org-element-at-point-no-context beg)))
            (desc (doom-docs--get-link-description context t)))
@@ -725,12 +725,13 @@ This primes `org-mode' for reading."
                       (icon (if (functionp icon) (funcall icon link) icon)))
             (add-text-properties beg (1+ beg) `(display ,(concat icon " ")))))
         (unless desc
-          (add-text-properties
-           (+ beg 2) (save-excursion
-                       (goto-char (+ beg 2))
-                       ;; Can't use :type because it could be aliased
-                       (+ 1 (point) (skip-chars-forward "^:" end)))
-           '(invisible t)))))))
+          (let ((offset (if bracket? 2 0)))
+            (add-text-properties
+             (+ beg offset) (save-excursion
+                              (goto-char (+ beg offset))
+                              ;; Can't use :type because it could be aliased
+                              (+ 1 (point) (skip-chars-forward "^:" end)))
+             '(invisible t intangible t cursor-intangible t))))))))
 
 
 ;;; ** kbd:*

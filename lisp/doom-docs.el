@@ -332,9 +332,7 @@ Returns PROP if specified, the context otherwise."
 ;;; ** Transformer functions
 
 (defmacro doom-docs--with-buffer (&rest body)
-  `(let ((gc-cons-threshold most-positive-fixnum)
-         (gc-cons-percentage 1.0))
-     (org-with-wide-buffer ,@body)))
+  `(with-delayed-gc! (org-with-wide-buffer ,@body)))
 
 (defun doom-docs--hide-meta-h ()
   "Hide all meta or comment lines."
@@ -589,8 +587,7 @@ This primes `org-mode' for reading."
   (progn
     (visual-line-mode -1)  ; uses hard wrapping
     (doom-docs--locations-load nil (list (current-buffer))))
-  (let ((gc-cons-threshold most-positive-fixnum)
-        (gc-cons-percentage 1.0))
+  (with-delayed-gc!
     (require 'org-id)
     (require 'ob)
     (setq-local org-id-link-to-org-use-id t
@@ -1059,35 +1056,34 @@ This primes `org-mode' for reading."
 ;;; * Commands
 
 (defun doom-docs--locations-load (&optional force? buffers)
-  (when (or force? (null doom-docs--id-files))
-    (with-temp-buffer
-      (delay-mode-hooks
-        (dlet ((gc-cons-threshold most-positive-fixnum)
-               (gc-cons-percentage 1.0)
-               (org-inhibit-startup t)
-               (org-id-locations-file doom-docs--id-location-file)
-               (org-id-track-globally t)
-               org-id--locations-checksum
-               org-id-locations-file-relative
-               org-id-extra-files
-               org-id-files
-               org-id-locations
-               org-id-extra-files
-               org-agenda-files)
-          (if (or force? (not (file-exists-p org-id-locations-file)))
-              (letf! (defun org-buffer-list (&rest _) nil)
-                (org-id-update-id-locations
-                 (doom-files-in (doom-docs-load-path) :match "/[^.].+\\.org$")))
-            (org-id-locations-load))
-          (setq doom-docs--id-files (copy-sequence org-id-files)
-                doom-docs--id-locations (copy-hash-table org-id-locations))))))
-  (let ((files (copy-sequence doom-docs--id-files))
-        (locations (copy-hash-table doom-docs--id-locations)))
-    (dolist (buffer (ensure-list buffers))
-      (with-current-buffer buffer
-        (when (eq major-mode 'doom-docs-mode)
-          (setq-local org-id-files files
-                      org-id-locations locations))))))
+  (with-delayed-gc!
+    (when (or force? (null doom-docs--id-files))
+      (with-temp-buffer
+        (delay-mode-hooks
+          (dlet ((org-inhibit-startup t)
+                 (org-id-locations-file doom-docs--id-location-file)
+                 (org-id-track-globally t)
+                 org-id--locations-checksum
+                 org-id-locations-file-relative
+                 org-id-extra-files
+                 org-id-files
+                 org-id-locations
+                 org-id-extra-files
+                 org-agenda-files)
+            (if (or force? (not (file-exists-p org-id-locations-file)))
+                (letf! (defun org-buffer-list (&rest _) nil)
+                  (org-id-update-id-locations
+                   (doom-files-in (doom-docs-load-path) :match "/[^.].+\\.org$")))
+              (org-id-locations-load))
+            (setq doom-docs--id-files (copy-sequence org-id-files)
+                  doom-docs--id-locations (copy-hash-table org-id-locations))))))
+    (let ((files (copy-sequence doom-docs--id-files))
+          (locations (copy-hash-table doom-docs--id-locations)))
+      (dolist (buffer (ensure-list buffers))
+        (with-current-buffer buffer
+          (when (eq major-mode 'doom-docs-mode)
+            (setq-local org-id-files files
+                        org-id-locations locations)))))))
 
 ;;;###autoload
 (defun doom/reload-docs (&optional force?)

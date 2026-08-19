@@ -574,9 +574,6 @@ This primes `org-mode' for reading."
 ;;
 ;;; * `doom-docs-mode'
 
-(defvar doom-docs-font-lock-keywords '()
-  "Extra font-lock keywords for Doom documentation.")
-
 (defvar doom-docs-mode-map
   (let ((map (make-sparse-keymap))
         (cmd (cmds! buffer-read-only #'kill-current-buffer)))

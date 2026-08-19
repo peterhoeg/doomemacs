@@ -615,10 +615,6 @@ This primes `org-mode' for reading."
                 ;; interferes with shell command snippets that may contain a $.
                 org-highlight-latex-and-related nil)
 
-    (when (featurep 'org-modern)
-      (setq-local org-modern-table nil
-                  org-modern-block-name nil))
-
     ;; HACK: Due to some backwards compatibility cludge in
     ;;   `org-set-regexps-and-options', it tries to read the default value of
     ;;   `org-todo-keywords', which requires this effort to temporarily change

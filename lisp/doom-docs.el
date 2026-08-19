@@ -704,14 +704,14 @@ This primes `org-mode' for reading."
                 "")
               'face 'bold)
             ,target
-            "::"
             ,(when-let* ((label (org-link-get-parameter type :help-desc)))
-               (or (ignore-errors
-                     (car (split-string (if (functionp label)
-                                            (funcall label target)
-                                          label)
-                                        "\n")))
-                   (propertize "<unknown>" 'face 'font-lock-doc-face)))))
+               (concat
+                ":: " (or (ignore-errors
+                            (car (split-string (if (functionp label)
+                                                   (funcall label target)
+                                                 label)
+                                               "\n")))
+                          (propertize "<unknown>" 'face 'font-lock-doc-face))))))
      " ")))
 
 (defun doom-docs-link-activate-func (beg end target bracket?)

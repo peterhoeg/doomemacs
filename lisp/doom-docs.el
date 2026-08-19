@@ -1045,7 +1045,7 @@ This primes `org-mode' for reading."
                                           ((locate-library %) 'warning)
                                           ('error)))))
        :help-echo #'doom-docs-link-help-echo
-       :help-name "Emacs package"
+       :help-name "Emacs package:"
        :help-desc #'doom-docs-link--package-help-desc)
       (org-link-set-parameters
        "module"
@@ -1053,7 +1053,7 @@ This primes `org-mode' for reading."
        :face 'doom-docs-module
        :activate-func #'doom-docs-link-activate-func
        :help-echo #'doom-docs-link-help-echo
-       :help-name "Doom module"
+       :help-name "Doom module:"
        :help-desc #'doom-docs-link--module-help-desc)
 
       (setq doom-docs--link-parameters org-link-parameters))))

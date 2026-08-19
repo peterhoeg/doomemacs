@@ -500,7 +500,6 @@ Returns PROP if specified, the context otherwise."
     (flymake-mode . -1)
     (flycheck-mode . -1)
     (spell-fu-mode . -1)
-    (visual-line-mode . -1)
     (mixed-pitch-mode . -1)
     (variable-pitch-mode . -1))
   "An alist of minor modes to toggle with `doom-docs-minor-mode'.
@@ -583,10 +582,7 @@ This primes `org-mode' for reading."
 ;;;###autoload
 (define-derived-mode doom-docs-mode org-mode "Doom Manual"
   "A derivative of `org-mode' for Doom's documentation files."
-  :after-hook
-  (progn
-    (visual-line-mode -1)  ; uses hard wrapping
-    (doom-docs--locations-load nil (list (current-buffer))))
+  :after-hook (doom-docs-mode--post-hook)
   (with-delayed-gc!
     (require 'org-id)
     (require 'ob)
@@ -662,6 +658,19 @@ This primes `org-mode' for reading."
                 org-cycle-hide-drawer-startup)
            (org-set-startup-visibility)))))
     (add-hook 'read-only-mode-hook #'doom-docs--toggle-read-only-h nil 'local)))
+
+(defun doom-docs-mode--post-hook ()
+  "Last-minute cleanup after `doom-docs-mode' initializes (and after hooks)."
+  (unless org-inhibit-startup
+    (with-delayed-gc!
+      (dolist (mode '(visual-line-mode  ; doom-docs use hard line wrapping
+                      ;; Redundant with `doom-docs-minor-mode'
+                      org-modern-mode
+                      org-appear-mode))
+        (if (and (boundp mode)
+                 (symbol-value mode))
+            (funcall mode -1)))
+      (doom-docs--locations-load nil (list (current-buffer))))))
 
 (defun doom-docs--toggle-read-only-h ()
   (doom-docs-minor-mode (if buffer-read-only +1 -1)))

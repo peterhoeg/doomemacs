@@ -135,6 +135,12 @@ Falls back to unicode icons, where specified, omitting icons otherwise.")
   "Face used for links to enabled Doom modules in `doom-docs-mode'."
   :group 'doom)
 
+(defface doom-docs-abbr
+  '((((background light)) :underline (:line-width 1 :color "grey65"))
+    (((background dark))  :underline (:line-width 1 :color "grey35")))
+  "Face used for abbreviations and definition lookup links."
+  :group 'doom)
+
 
 ;;
 ;;; * Helpers
@@ -900,6 +906,58 @@ This primes `org-mode' for reading."
         (recenter)))))
 
 
+;;; ** abbr:*
+
+(defvar doom-docs--abbr-cache nil
+  "Hash table mapping words to definitions and location.")
+
+(defun doom-docs--abbr-file ()
+  (doom-path doom-docs-dir "appendix.org"))
+
+(defun doom-docs--abbr-populate (&optional force?)
+  (or (and (not force?)
+           (hash-table-p doom-docs--abbr-cache))
+      (with-temp-buffer
+        (setq doom-docs--abbr-cache (make-hash-table :test 'equal))
+        (insert-file-contents (doom-docs--abbr-file))
+        (dlet ((org-inhibit-startup t))
+          (delay-mode-hooks (org-mode)))
+        (while (re-search-forward "^\\(- +\\)\\([^:]+\\):: *" nil t)
+          (let ((indent (string-width (match-string 1)))
+                (beg (match-beginning 1))
+                (words (match-string-no-properties 2))
+                (def (string-trim
+                      (buffer-substring-no-properties
+                       (match-end 0) (save-excursion (org-end-of-item) (point)))
+                      "\n" "\n")))
+            (unless (eolp)
+              (with-temp-buffer
+                (insert def)
+                (indent-rigidly (point-min) (point-max) (- indent))
+                (setq def (buffer-string))))
+            (dolist (word (split-string words ", "))
+              (puthash (downcase (string-trim word)) (cons def beg) doom-docs--abbr-cache))))
+        t)))
+
+(defun doom-docs-link--abbr-follow (target)
+  (doom-docs--abbr-populate)
+  (if-let* ((def (gethash (downcase target) doom-docs--abbr-cache)))
+      (let ((file (doom-docs--abbr-file)))
+        (with-current-buffer
+            (switch-to-buffer (or (get-file-buffer file)
+                                  (find-file-noselect file)))
+          (goto-char (cdr def))
+          (when (org-invisible-p (cdr def))
+            (org-reveal '(4)))))
+    (user-error "No appendix definition for %S" target)))
+
+(defun doom-docs-link--abbr-help-desc (target)
+  (doom-docs--abbr-populate)
+  (if-let* ((def (gethash (downcase target) doom-docs--abbr-cache)))
+      (car def)
+    (propertize "<No appendix definition for %S>" 'face 'warning)))
+
+
 ;;; ** Link abbrevs
 
 (defun doom-docs--link-help (_link)
@@ -1060,6 +1118,14 @@ This primes `org-mode' for reading."
        :help-echo #'doom-docs-link-help-echo
        :help-name "Doom module:"
        :help-desc #'doom-docs-link--module-help-desc)
+      (org-link-set-parameters
+       "abbr"
+       :follow #'doom-docs-link--abbr-follow
+       :face 'doom-docs-abbr
+       :activate-func #'doom-docs-link-activate-func
+       :help-echo #'doom-docs-link-help-echo
+       :help-name "Abbreviation:"
+       :help-desc #'doom-docs-link--abbr-help-desc)
 
       (setq doom-docs--link-parameters org-link-parameters))))
 
@@ -1099,11 +1165,12 @@ This primes `org-mode' for reading."
 
 ;;;###autoload
 (defun doom/reload-docs (&optional force?)
-  "Reload org ID locations in `doom-docs-mode' buffers.
+  "Reload org ID locations & appendix terms in `doom-docs-mode' buffers.
 
 If FORCE? is non-nil, do it even if they're already loaded."
   (interactive (list 'interactive))
-  (doom-docs--locations-load force? (doom-buffers-in-mode 'doom-docs-mode)))
+  (doom-docs--locations-load force? (doom-buffers-in-mode 'doom-docs-mode))
+  (doom-docs--abbr-populate force?))
 
 (provide 'doom-docs)
 ;;; doom-docs.el ends here

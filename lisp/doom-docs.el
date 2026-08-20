@@ -97,6 +97,14 @@ Falls back to unicode icons, where specified, omitting icons otherwise.")
   "Face used for doom:* links."
   :group 'doom)
 
+(defface doom-docs-title '((t :inherit org-document-title :weight bold :height 1.4))
+  "Face used for #+TITLEs in `doom-docs-minor-mode'."
+  :group 'doom)
+
+(defface doom-docs-info '((t :inherit org-document-info :weight normal :height 1.15))
+  "Face used for #+SUBTITLE, #+DATE, #+AUTHOR, #+EMAIL in `doom-docs-minor-mode'."
+  :group 'doom)
+
 (defface doom-docs-symbol
   '((t :inherit font-lock-keyword-face
        :box (:line-width (-1 . -1) :color "grey35")))
@@ -545,12 +553,12 @@ This primes `org-mode' for reading."
           org-hide-macro-markers))
   (when doom-docs-minor-mode
     (make-local-variable 'doom-docs--initial-values))
-  (mapc (lambda! ((face . plist))
+  (mapc (lambda! ((face . newface))
           (if doom-docs-minor-mode
-              (push (apply #'face-remap-add-relative face plist) doom-docs--cookies)
+              (push (face-remap-add-relative face newface) doom-docs--cookies)
             (mapc #'face-remap-remove-relative doom-docs--cookies)))
-        '((org-document-title :weight bold :height 1.4)
-          (org-document-info  :weight normal :height 1.15)))
+        '((org-document-title . doom-docs-title)
+          (org-document-info  . doom-docs-info)))
   (mapc (lambda! ((mode . state))
           (if doom-docs-minor-mode
               (if (and (boundp mode) (symbol-value mode))

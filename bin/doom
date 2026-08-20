@@ -307,6 +307,15 @@ SEE ALSO:
                      #'doom-loaddefs--scan-file nil (doom-emacs-dir "bin/"))
                   (provide 'doom-cli-loaddefs)))))
 
+  ;; Temporary measure allow doom-* sub-scripts to be executed independently.
+  (add-hook! 'doom-cli-before-run-functions
+    (defun doom-cli-loaddefs-delete-h (context)
+      (when (member (doom-cli-context-command context)
+                    '(("doom" "sync")
+                      ("doom" "upgrade")))
+        (doom-log "Deleting loaddefs file: %s" doom-cli-loaddefs-file)
+        (delete-file doom-cli-loaddefs-file))))
+
   ;; Eagerly load the two commands that should always be present. Running one of
   ;; these commands is required for the rest of the commands to work.
   (let ((doom-cli--loading t))

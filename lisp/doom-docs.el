@@ -211,9 +211,12 @@ Passes PLIST to appropriate nerd-icons-* function."
   "Return the `org-element-context' at POS in BUFFER.
 
 Returns PROP if specified, the context otherwise."
-  (when-let* ((ctxt (with-current-buffer (or buffer (current-buffer))
-                      (when (eq major-mode 'doom-docs-mode)
-                        (org-element-context (org-element-at-point pos))))))
+  (when-let*
+      ((ctxt (with-current-buffer (if (bufferp buffer) buffer (current-buffer))
+               (when (eq major-mode 'doom-docs-mode)
+                 (save-excursion
+                   (goto-char pos)
+                   (org-element-context))))))
     (if prop
         (org-element-property prop ctxt)
       ctxt)))
@@ -690,29 +693,30 @@ This primes `org-mode' for reading."
 ;;
 ;;; * Custom links
 
-(defun doom-docs-link-help-echo (_window object pos)
-  (when-let* ((context (doom-docs-context-at-pos pos object))
-              (target (doom-docs--get-link-description context))
-              (type (org-element-property :type context)))
-    (string-join
-     (delq
-      nil `(,(propertize
-              (if-let* ((name (org-link-get-parameter type :help-name)))
-                  (format "%s" (if (functionp name)
-                                   (funcall name target)
-                                 name))
-                "")
-              'face 'bold)
-            ,target
-            ,(when-let* ((label (org-link-get-parameter type :help-desc)))
-               (concat
-                ":: " (or (ignore-errors
-                            (car (split-string (if (functionp label)
-                                                   (funcall label target)
-                                                 label)
-                                               "\n")))
-                          (propertize "<unknown>" 'face 'font-lock-doc-face))))))
-     " ")))
+(defun doom-docs-link-help-echo (window object pos)
+  (with-selected-window window
+    (when-let* ((context (doom-docs-context-at-pos pos object))
+                (target (doom-docs--get-link-description context))
+                (type (org-element-property :type context)))
+      (string-join
+       (delq
+        nil `(,(propertize
+                (if-let* ((name (org-link-get-parameter type :help-name)))
+                    (format "%s" (if (functionp name)
+                                     (funcall name target)
+                                   name))
+                  "")
+                'face 'bold)
+              ,target
+              ,(when-let* ((label (org-link-get-parameter type :help-desc)))
+                 (concat
+                  ":: " (or (ignore-errors
+                              (car (split-string (if (functionp label)
+                                                     (funcall label target)
+                                                   label)
+                                                 "\n")))
+                            (propertize "<unknown>" 'face 'font-lock-doc-face))))))
+       " "))))
 
 (defun doom-docs-link-activate-func (beg end target bracket?)
   (when org-descriptive-links
@@ -768,12 +772,13 @@ This primes `org-mode' for reading."
                  ,(propertize (concat keystr (make-string total ?\s))
                               'face 'doom-docs-kbd))))))
 
-(defun doom-docs-link--kbd-help-echo (_window object pos)
-  (when-let* ((key (doom-docs--get-link-description
-                    (doom-docs-context-at-pos pos))))
-    (concat "Key sequence: "
-            (propertize (doom-docs-link--kbd key t)
-                        'face 'help-key-binding))))
+(defun doom-docs-link--kbd-help-echo (window object pos)
+  (with-selected-window window
+    (when-let* ((key (doom-docs--get-link-description
+                      (doom-docs-context-at-pos pos object))))
+      (concat "Key sequence: "
+              (propertize (doom-docs-link--kbd key t)
+                          'face 'help-key-binding)))))
 
 
 ;;; ** M-x:*

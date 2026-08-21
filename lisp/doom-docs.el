@@ -975,13 +975,28 @@ This primes `org-mode' for reading."
           ("doom-help-conventions:"))))
 
 (defun doom-docs--link-history (_link)
-  (doom-docs--repo-url
-   nil nil
-   (if-let* ((key (doom-module-from-path default-directory)))
-       (format "commits/main/modules/%s/%s"
-               (doom-keyword-name (car key)) (cdr key))
-     (format "commits/main/%s"
-             (file-relative-name default-directory (doom-project-root))))))
+  (cond ((require 'magit nil t)
+         (format
+          "elisp:%S" '(magit-log-setup-buffer
+                       (list (or (magit-get-current-branch) "HEAD"))
+                       (car (magit-log-arguments))
+                       (list default-directory)
+                       nil)))
+        ((and (bound-and-true-p vc-mode) (vc-backend buffer-file-name))
+         (format
+          "elisp:%S" '(switch-to-buffer
+                       (save-window-excursion
+                         (vc-print-log-internal (vc-backend buffer-file-name)
+                                                (list default-directory)
+                                                nil)
+                         (current-buffer)))))
+        ((doom-docs--repo-url
+          nil nil
+          (if-let* ((key (doom-module-from-path default-directory)))
+              (format "commits/main/modules/%s/%s"
+                      (doom-keyword-name (car key)) (cdr key))
+            (format "commits/main/%s"
+                    (file-relative-name default-directory (doom-project-root))))))))
 
 (defun doom-docs--link-issues (_link)
   (doom-docs--repo-url

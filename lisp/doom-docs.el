@@ -1194,5 +1194,130 @@ If FORCE? is non-nil, do it even if they're already loaded."
   (doom-docs--locations-load force? (doom-buffers-in-mode 'doom-docs-mode))
   (doom-docs--abbr-populate force?))
 
+;;;###autoload
+(defun doom/docs (&optional file interactive?)
+  "View Doom's documentation FILE.
+\(fn &optional FILE INTERACTIVE?)"
+  (interactive '(nil interactive))
+  (with-temp-message (if interactive? "Loading Doom manual...")
+    (quiet! (find-file (or file (doom-path doom-docs-dir "index.org"))))))
+
+;; ;;;###autoload
+;; (defun doom/docs-homepage ()
+;;   "Open the browser to visit docs.doomemacs.org."
+;;   (interactive)
+;;   (browse-url "https://docs.doomemacs.org"))
+
+;;;###autoload
+(defun doom/docs-news (&optional interactive?)
+  "Visit Doom's news file.
+\(fn &optional INTERACTIVE?)"
+  (interactive '(interactive))
+  (doom/docs (read-file-name
+              "Select version: " (doom-path doom-docs-dir "news/")
+              (apply #'format "v%d.%d.org" (seq-take (version-to-list doom-version) 2))
+              t)
+             interactive?))
+
+;;;###autoload
+(defun doom/docs-faq (&optional interactive?)
+  "Visit Doom's project FAQ."
+  (interactive '(interactive))
+  (doom/docs (doom-path doom-docs-dir "faq.org") interactive?))
+
+;;;###autoload
+(defun doom/docs-search (&optional initial-input)
+  "Perform a text search on all of Doom's documentation"
+  (interactive)
+  (funcall (cond ((fboundp '+ivy-file-search) #'+ivy-file-search)
+                 ((fboundp '+helm-file-search) #'+helm-file-search)
+                 ((fboundp '+vertico-file-search) #'+vertico-file-search)
+                 ((and (fboundp 'consult-grep) (executable-find "grep"))
+                  (consult-grep doom-docs-dir initial-input)
+                  #'ignore)
+                 ((rgrep
+                   (read-regexp
+                    "Search for" (or initial-input 'grep-tag-default)
+                    'grep-regexp-history)
+                   "*.org" doom-docs-dir)
+                  #'ignore))
+           :query initial-input
+           :args '("-t" "org")
+           :in doom-emacs-dir
+           :prompt "Search documentation for: "))
+
+(cl-defsubst doom-docs--headings (files &key depth mindepth include-files &allow-other-keys)
+  (let ((default-directory doom-docs-dir)
+        (depth (if (integerp depth) depth))
+        (mindepth (if (integerp mindepth) mindepth)))
+    (dlet ((org-agenda-files (mapcar #'expand-file-name (ensure-list files)))
+           (org-inhibit-startup t))
+      (with-temp-message "Loading search results..."
+        (require 'org)
+        (unwind-protect
+            (delq
+             nil
+             (org-map-entries
+              (lambda ()
+                (cl-destructuring-bind (level text tags)
+                    (list (org-current-level)
+                          (org-get-heading t t t t)
+                          (org-get-tags))
+                  (when (and (or (null depth)
+                                 (<= level depth))
+                             (or (null mindepth)
+                                 (>= level mindepth))
+                             (or (null tags)
+                                 (not (cl-loop for tag in tags
+                                               if (string-match-p "^TOC\\|nosearch$" tag)
+                                               return t))))
+                    (let ((path  (org-get-outline-path))
+                          (title (org-collect-keywords '("TITLE") '("TITLE"))))
+                      (list (string-join
+                             (list (string-join
+                                    (append (when include-files
+                                              (list (or (cdr (assoc "TITLE" title))
+                                                        (file-relative-name (buffer-file-name)))))
+                                            path
+                                            (when text
+                                              (list (replace-regexp-in-string org-link-any-re "\\4" text))))
+                                    " > ")
+                                   tags)
+                             " ")
+                            (buffer-file-name)
+                            (point))))))
+              t 'agenda))
+          (mapc #'kill-buffer org-agenda-new-buffers)
+          (setq org-agenda-new-buffers nil))))))
+
+(cl-defsubst doom-docs-completing-read-headings
+    (prompt files &rest plist &key _depth _mindepth _include-files initial-input action)
+  (let* ((alist (apply #'doom-docs--headings files plist))
+         (result (or (completing-read prompt alist nil nil initial-input)
+                     (user-error "Aborted"))))
+    (seq-let (file location) (cdr (assoc result alist))
+      (if (functionp action)
+          (funcall action file location)
+        (find-file file)
+        (cond ((functionp location) (funcall location))
+              (location (goto-char location)))
+        (ignore-errors
+          (when (doom-docs--invisible-p (point))
+            (save-excursion
+              (outline-previous-visible-heading 1)
+              (org-show-subtree))))))))
+
+;;;###autoload
+(defun doom/docs-headings (&optional initial-input)
+  "Search Doom documentation headlings and jump to a headline."
+  (interactive)
+  (with-delayed-gc!
+    (doom-docs-completing-read-headings
+     "Find in Doom docs: "
+     (doom-files-in doom-docs-dir :match "\\.org\\'")
+     :depth 3
+     :include-files t
+     :initial-input initial-input)))
+
 (provide 'doom-docs)
 ;;; doom-docs.el ends here

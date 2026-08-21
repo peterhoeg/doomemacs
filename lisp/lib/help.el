@@ -131,73 +131,6 @@ selection of all minor-modes, active or not."
 ;;
 ;;; * Documentation commands
 
-(cl-defun doom--org-headings (files &key depth mindepth include-files &allow-other-keys)
-  "TODO"
-  (let ((default-directory doom-docs-dir)
-        (depth (if (integerp depth) depth))
-        (mindepth (if (integerp mindepth) mindepth)))
-    (require 'org)
-    (dlet ((org-agenda-files (mapcar #'expand-file-name (ensure-list files)))
-           (org-inhibit-startup t))
-      (message "Loading search results...")
-      (unwind-protect
-          (delq
-           nil
-           (org-map-entries
-            (lambda ()
-              (cl-destructuring-bind (level _reduced-level _todo _priority text tags)
-                  (org-heading-components)
-                (when (and (or (null depth)
-                               (<= level depth))
-                           (or (null mindepth)
-                               (>= level mindepth))
-                           (or (null tags)
-                               (not (string-match-p ":TOC" tags))))
-                  (let ((path  (org-get-outline-path))
-                        (title (org-collect-keywords '("TITLE") '("TITLE"))))
-                    (list (string-join
-                           (list (string-join
-                                  (append (when include-files
-                                            (list (or (cdr (assoc "TITLE" title))
-                                                      (file-relative-name (buffer-file-name)))))
-                                          path
-                                          (when text
-                                            (list (replace-regexp-in-string org-link-any-re "\\4" text))))
-                                  " > ")
-                                 tags)
-                           " ")
-                          (buffer-file-name)
-                          (point))))))
-            t 'agenda))
-        (mapc #'kill-buffer org-agenda-new-buffers)
-        (setq org-agenda-new-buffers nil)))))
-
-;;;###autoload
-(cl-defun doom-completing-read-org-headings
-    (prompt files &rest plist &key _depth _mindepth _include-files initial-input extra-candidates action)
-  "TODO"
-  (dlet (ivy-sort-functions-alist)
-    (let ((alist
-           (append (apply #'doom--org-headings files plist)
-                   extra-candidates)))
-      (if-let* ((result (completing-read prompt alist nil nil initial-input)))
-          (cl-destructuring-bind (file &optional location)
-              (cdr (assoc result alist))
-            (if action
-                (funcall action file location)
-              (find-file file)
-              (cond ((functionp location)
-                     (funcall location))
-                    (location
-                     (goto-char location)))
-              (ignore-errors
-                (when (memq (get-char-property (point) 'invisible)
-                            '(outline org-fold-outline))
-                  (save-excursion
-                    (outline-previous-visible-heading 1)
-                    (org-show-subtree))))))
-        (user-error "Aborted")))))
-
 ;;;###autoload
 (defun doom/homepage ()
   "Open the doom emacs homepage in the browser."
@@ -218,93 +151,6 @@ selection of all minor-modes, active or not."
    (if (equal repo "I don't know")
        "https://github.com/orgs/doomemacs/discussions/new?category=issues"
      (format "https://github.com/%s/issues/new?template=bug_report.yml" repo))))
-
-;;;###autoload
-(defun doom/help ()
-  "Open Doom's user manual."
-  (interactive)
-  (find-file (expand-file-name "index.org" doom-docs-dir)))
-
-;;;###autoload
-(defun doom/help-search-headings (&optional initial-input)
-  "Search Doom's documentation and jump to a headline."
-  (interactive)
-  (doom-completing-read-org-headings
-   "Find in Doom help: "
-   (list "getting_started.org"
-         "contributing.org"
-         "troubleshooting.org"
-         "tutorials.org"
-         "faq.org")
-   :depth 3
-   :include-files t
-   :initial-input initial-input
-   :extra-candidates
-   (mapcar (lambda (x)
-             (setcar x (concat "Doom Modules > " (car x)))
-             x)
-           (doom--help-modules-list))))
-
-;;;###autoload
-(defun doom/help-search (&optional initial-input)
-  "Perform a text search on all of Doom's documentation."
-  (interactive)
-  (funcall (cond ((fboundp '+ivy-file-search)
-                  #'+ivy-file-search)
-                 ((fboundp '+helm-file-search)
-                  #'+helm-file-search)
-                 ((fboundp '+vertico-file-search)
-                  #'+vertico-file-search)
-                 ((rgrep
-                   (read-regexp
-                    "Search for" (or initial-input 'grep-tag-default)
-                    'grep-regexp-history)
-                   "*.org" doom-emacs-dir)
-                  #'ignore))
-           :query initial-input
-           :args '("-t" "org")
-           :in doom-emacs-dir
-           :prompt "Search documentation for: "))
-
-;;;###autoload
-(defun doom/help-search-news (&optional initial-input)
-  "Search headlines in Doom's newsletters."
-  (interactive)
-  (doom-completing-read-org-headings
-   "Find in News: "
-   (nreverse (doom-files-in (expand-file-name "news" doom-docs-dir)
-                            :match "/[0-9]"
-                            :relative-to doom-docs-dir))
-   :include-files t
-   :initial-input initial-input))
-
-;;;###autoload
-(defun doom/help-faq (&optional initial-input)
-  "Search Doom's FAQ and jump to a question."
-  (interactive)
-  (doom-completing-read-org-headings
-   "Find in FAQ: " (list "faq.org")
-   :depth 2
-   :initial-input initial-input))
-
-;;;###autoload
-(defun doom/help-news ()
-  "Open a Doom newsletter.
-The latest newsletter will be selected by default."
-  (interactive)
-  (let* ((default-directory (expand-file-name "news/" doom-docs-dir))
-         (news-files (doom-files-in default-directory)))
-    (find-file
-     (read-file-name (format "Open Doom newsletter (current: v%s): "
-                             doom-version)
-                     default-directory
-                     (if (member doom-version news-files)
-                         doom-version
-                       (concat (mapconcat #'number-to-string
-                                          (nbutlast (version-to-list doom-version) 1)
-                                          ".")
-                               ".x"))
-                     t doom-version))))
 
 ;;;###autoload
 (defun doom/help-autodefs (autodef)
@@ -768,6 +614,28 @@ Uses the symbol at point or the current selection, if available."
                                    (format "%s.el" filebase)))
             collect it)
    query "Search loaded files: "))
+
+
+;;
+;;; * DEPRECATED aliases
+
+;;;###autoload
+(defalias 'doom/help #'doom/docs)
+
+;;;###autoload
+(defalias 'doom/help-search #'doom/docs-search)
+
+;;;###autoload
+(defalias 'doom/help-news #'doom/docs-news)
+
+;;;###autoload
+(defalias 'doom/help-faq #'doom/docs-faq)
+
+;;;###autoload
+(defalias 'doom/help-search-headings #'doom/docs-headings)
+
+;;;###autoload
+(defalias 'doom/help-search-news #'doom/docs-headings)
 
 (provide 'doom-lib '(help))
 ;;; help.el ends here

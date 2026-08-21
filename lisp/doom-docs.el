@@ -329,7 +329,8 @@ Returns PROP if specified, the context otherwise."
           ((and link (guard (not (equal (org-element-end link) (1+ (length linkstr))))))
            (user-error "Garbage after link in %S (%S)"
                        linkstr (substring linkstr (1- (org-element-end link)))))
-          (link (org-link-open link)))))))
+          (link (org-link-open link)))
+        (org-show-subtree)))))
 
 (defvar doom-docs--type nil)
 (defun doom-docs--display-menu-h ()

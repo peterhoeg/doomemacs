@@ -1170,9 +1170,9 @@ This primes `org-mode' for reading."
                  org-id-extra-files
                  org-agenda-files)
             (if (or force? (not (file-exists-p org-id-locations-file)))
-                (letf! (defun org-buffer-list (&rest _) nil)
+                (letf! (defun! org-buffer-list (&rest _) nil)
                   (org-id-update-id-locations
-                   (doom-files-in (doom-docs-load-path) :match "/[^.].+\\.org$")))
+                   (doom-files-in (doom-docs-load-path) :match "/[^_.][^./]+\\.org\\'")))
               (org-id-locations-load))
             (setq doom-docs--id-files (copy-sequence org-id-files)
                   doom-docs--id-locations (copy-hash-table org-id-locations))))))

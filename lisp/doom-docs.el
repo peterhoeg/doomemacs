@@ -42,11 +42,8 @@
     ("emacsdir" . doom-emacs-dir)
     ("doomdir" . doom-user-dir)
 
-    ("doom-index"            . "id:3051d3b6-83e2-4afa-b8fe-1956c62ec096")
-    ("doom-faq"              . "id:5fa8967a-532f-4e0c-8ae8-25cd802bf9a9")
-    ("doom-help-conventions" . "id:9bb17259-0b07-45a8-ae7a-fc5e0b16244e")
-    ("doom-help-changelog"   . "id:7c56cc08-b54b-4f4b-b106-a76e2650addd")
-    ("doom-help-modules"     . "id:1ee0b650-f09b-4454-8690-cc145aadef6e")
+    ("doom-index" . "id:3051d3b6-83e2-4afa-b8fe-1956c62ec096")
+    ("doom-faq" . "id:5fa8967a-532f-4e0c-8ae8-25cd802bf9a9")
 
     ("doom-help"    . doom-docs--link-help)
     ("doom-history" . doom-docs--link-history)
@@ -969,10 +966,11 @@ This primes `org-mode' for reading."
 ;;; ** Link abbrevs
 
 (defun doom-docs--link-help (_link)
-  (let ((title (cadar (org-collect-keywords '("TITLE")))))
-    (cond ((equal title "Changelog") "doom-help-changelog:")
-          ((string-prefix-p ":" title) "doom-help-modules:")
-          ("doom-help-conventions:"))))
+  (cond ((eq (car doom-docs--type) 'module)
+         "id:1ee0b650-f09b-4454-8690-cc145aadef6e")
+        ((file-in-directory-p buffer-file-name (doom-path doom-docs-dir "news/"))
+         "id:7c56cc08-b54b-4f4b-b106-a76e2650addd")
+        ("id:9bb17259-0b07-45a8-ae7a-fc5e0b16244e")))
 
 (defun doom-docs--link-history (_link)
   (cond ((require 'magit nil t)

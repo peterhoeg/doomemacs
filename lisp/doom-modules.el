@@ -555,16 +555,18 @@ MODULE are symbols and GROUP is a keyword."
        (choice (completing-read
                 prompt
                 (let ((cands (cl-loop for (grp . mod) in modules
+                                      unless (and (eq grp :user) (null mod))
                                       collect (if mod
                                                   (format "%s %s" grp mod)
-                                                (format "%s" grp)))))
+                                                (format "%s" grp))))
+                      (sortfn (fn! (sort % #'string-lessp))))
                   (lambda (str pred action)
                     (if (eq action 'metadata)
                         `(metadata
                           (category . doom-module)
                           (annotation-function . doom-module--annotate)
-                          (display-sort-function . doom-module--completion-sort)
-                          (cycle-sort-function . doom-module--completion-sort))
+                          (display-sort-function . ,sortfn)
+                          (cycle-sort-function . ,sortfn))
                       (complete-with-action action cands str pred))))
                 nil t nil nil
                 (when-let* ((key (doom-module-at-point)))

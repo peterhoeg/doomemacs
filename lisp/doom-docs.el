@@ -517,11 +517,13 @@ Returns PROP if specified, the context otherwise."
     (spell-fu-mode . -1)
     (mixed-pitch-mode . -1)
     (variable-pitch-mode . -1)
-    (indent-bars-mode . -1))
+    (indent-bars-mode . -1)
+    (org-modern-mode . -1)
+    (org-appear-mode . -1))
   "An alist of minor modes to toggle with `doom-docs-minor-mode'.
 
-The CAR is the minor mode symbol, and CDR should be either +1 or -1,
-depending.")
+The CAR is the minor mode symbol, and CDR should be +1 to enable the mode during
+`doom-docs-minor-mode' or -1 to disable it instead.")
 
 (defvar doom-docs--initial-values nil)
 (defvar doom-docs--cookies nil)
@@ -541,14 +543,6 @@ This primes `org-mode' for reading."
      doom-docs--hidden-spec '(:visible nil
                               :ellipsis nil
                               :isearch-ignore t)))
-  (mapc (lambda (sym)
-          (if doom-docs-minor-mode
-              (set (make-local-variable sym) t)
-            (kill-local-variable sym)))
-        '(org-pretty-entities
-          org-descriptive-links
-          org-hide-emphasis-markers
-          org-hide-macro-markers))
   (when doom-docs-minor-mode
     (make-local-variable 'doom-docs--initial-values))
   (mapc (lambda! ((face . newface))
@@ -569,6 +563,14 @@ This primes `org-mode' for reading."
             (when-let* ((old-val (assq mode doom-docs--initial-values)))
               (funcall mode (if old-val +1 -1)))))
         doom-docs-minor-mode-alist)
+  (mapc (lambda (sym)
+          (if doom-docs-minor-mode
+              (set (make-local-variable sym) t)
+            (kill-local-variable sym)))
+        '(org-pretty-entities
+          org-descriptive-links
+          org-hide-emphasis-markers
+          org-hide-macro-markers))
   (unless doom-docs-minor-mode
     (kill-local-variable 'doom-docs--initial-values)))
 
@@ -675,13 +677,7 @@ This primes `org-mode' for reading."
   "Last-minute cleanup after `doom-docs-mode' initializes (and after hooks)."
   (unless org-inhibit-startup
     (with-delayed-gc!
-      (dolist (mode '(visual-line-mode  ; doom-docs use hard line wrapping
-                      ;; Redundant with `doom-docs-minor-mode'
-                      org-modern-mode
-                      org-appear-mode))
-        (if (and (boundp mode)
-                 (symbol-value mode))
-            (funcall mode -1)))
+      (visual-line-mode -1)  ; doom-docs use hard line wrapping
       (doom-docs--locations-load nil (list (current-buffer))))))
 
 (defun doom-docs--toggle-read-only-h ()

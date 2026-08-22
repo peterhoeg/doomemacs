@@ -1,75 +1,5 @@
 ;;; lisp/lib/help.el -*- lexical-binding: t; -*-
 
-(defvar doom--help-major-mode-module-alist
-  '((dockerfile-mode :tools docker)
-    (agda2-mode      :lang agda)
-    (c-mode          :lang cc)
-    (c++-mode        :lang cc)
-    (objc++-mode     :lang cc)
-    (crystal-mode    :lang crystal)
-    (lisp-mode       :lang common-lisp)
-    (csharp-mode     :lang csharp)
-    (clojure-mode    :lang clojure)
-    (clojurescript-mode :lang clojure)
-    (json-mode       :lang json)
-    (yaml-mode       :lang yaml)
-    (csv-mode        :lang data)
-    (erlang-mode     :lang erlang)
-    (elixir-mode     :lang elixir)
-    (elm-mode        :lang elm)
-    (emacs-lisp-mode :lang emacs-lisp)
-    (ess-r-mode      :lang ess)
-    (ess-julia-mode  :lang ess)
-    (go-mode         :lang go)
-    (haskell-mode    :lang haskell)
-    (hy-mode         :lang hy)
-    (idris-mode      :lang idris)
-    (java-mode       :lang java)
-    (js2-mode        :lang javascript)
-    (rjsx-mode       :lang javascript)
-    (typescript-mode :lang javascript)
-    (typescript-tsx-mode :lang javascript)
-    (coffee-mode     :lang javascript)
-    (julia-mode      :lang julia)
-    (kotlin-mode     :lang kotlin)
-    (latex-mode      :lang latex)
-    (LaTeX-mode      :lang latex)
-    (ledger-mode     :lang ledger)
-    (lua-mode        :lang lua)
-    (moonscript-mode :lang lua)
-    (markdown-mode   :lang markdown)
-    (gfm-mode        :lang markdown)
-    (nim-mode        :lang nim)
-    (nix-mode        :lang nix)
-    (tuareg-mode     :lang ocaml)
-    (org-mode        :lang org)
-    (raku-mode       :lang raku)
-    (php-mode        :lang php)
-    (hack-mode       :lang php)
-    (plantuml-mode   :lang plantuml)
-    (purescript-mode :lang purescript)
-    (python-mode     :lang python)
-    (restclient-mode :lang rest)
-    (ruby-mode       :lang ruby)
-    (rust-mode       :lang rust)
-    (rustic-mode     :lang rust)
-    (scala-mode      :lang scala)
-    (scheme-mode     :lang scheme)
-    (sh-mode         :lang sh)
-    (swift-mode      :lang swift)
-    (web-mode        :lang web)
-    (css-mode        :lang web)
-    (scss-mode       :lang web)
-    (sass-mode       :lang web)
-    (less-css-mode   :lang web)
-    (stylus-mode     :lang web)
-    (terra-mode      :lang terra))
-  "An alist mapping major modes to Doom modules.
-
-This is used by `doom/help-modules' to auto-select the module corresponding to
-the current major-modea.")
-
-
 ;;
 ;;; * Helpers
 
@@ -240,77 +170,40 @@ without needing to check if they are available."
         (helpful-callable fn)
       (describe-function fn))))
 
-(defun doom--help-modules-list ()
-  (cl-loop for (cat . mod) in (doom-module-list 'all)
-           for readme-path = (or (doom-module-locate-path (cons cat mod) "README.org")
-                                 (doom-module-locate-path (cons cat mod)))
-           for format = (if mod (format "%s %s" cat mod) (format "%s" cat))
-           if (doom-module-active-p cat mod)
-           collect (list format readme-path)
-           else if (and cat mod)
-           collect (list (propertize format 'face 'font-lock-comment-face)
-                         readme-path)))
-
-(defun doom--help-current-module-str ()
-  (cond ((save-excursion
-           (ignore-errors
-             (thing-at-point--beginning-of-sexp)
-             (unless (eq (char-after) ?\()
-               (backward-char))
-             (let ((sexp (sexp-at-point)))
-               ;; DEPRECATED: `featurep!' is deprecated
-               (when (memq (car-safe sexp) '(featurep! modulep! require!))
-                 (format "%s %s" (nth 1 sexp) (nth 2 sexp)))))))
-        ((when buffer-file-name
-           (when-let* ((mod (doom-module-from-path buffer-file-name)))
-             (unless (memq (car mod) '(:doom :user))
-               (format "%s %s" (car mod) (cdr mod))))))
-        ((when-let* ((mod (cdr (assq major-mode doom--help-major-mode-module-alist))))
-           (format "%s %s"
-                   (symbol-name (car mod))
-                   (symbol-name (cadr mod)))))))
-
 ;;;###autoload
-(defun doom/describe-module (category module &optional visit-dir)
-  "Open the documentation for a Doom module.
+(defun doom/describe-module (key &optional visit-dir?)
+  "Open the documentation for a Doom module by KEY.
 
-CATEGORY is a keyword and MODULE is a symbol. e.g. :editor and \\='evil.
+See `doom-module-key' for details on SOURCE, GROUP, and MODULE. Automatically
+selects the module at point (in `doom!'), the module derived from a `modulep!'
+call, or the module that contains the current file.
 
-If VISIT-DIR is non-nil, visit the module's directory rather than its
+If VISIT-DIR? is non-nil, visit the module's directory rather than its
 documentation.
 
-Automatically selects a) the module at point (in private init files), b) the
-module derived from a `modulep!' or `require!' call, c) the module that the
-current file is in, or d) the module associated with the current major mode (see
-`doom--help-major-mode-module-alist')."
+\(fn (SOURCE GROUP MODULE [FLAGS...]) &optional VISIT-DIR?)"
   (interactive
-   (nconc
-    (mapcar #'intern
-            (split-string
-             (completing-read "Describe module: "
-                              (doom--help-modules-list)
-                              nil t nil nil
-                              (doom--help-current-module-str))
-             " " t))
-    (list current-prefix-arg)))
-  (cl-check-type category symbol)
-  (cl-check-type module symbol)
-  (cl-destructuring-bind (module-string path)
-      (or (assoc (format "%s %s" category module) (doom--help-modules-list))
-          (user-error "'%s %s' is not a valid module" category module))
-    (setq module-string (substring-no-properties module-string))
-    (unless (file-readable-p path)
-      (error "Can't find or read %S module at %S" module-string path))
-    (cond ((not (file-directory-p path))
-           (if visit-dir
-               (doom-project-browse (file-name-directory path))
-             (find-file path)))
-          (visit-dir
-           (doom-project-browse path))
-          ((y-or-n-p (format "The %S module has no README file. Explore its directory?"
-                             module-string))
-           (doom-project-browse (file-name-as-directory path)))
-          ((user-error "Aborted module lookup")))))
+   (list (doom-module-completing-read "Describe module: ")
+         current-prefix-arg))
+  (cl-destructuring-bind (_source group module . flags) key
+    (let* ((dir (doom-module-locate-path (cons group module)))
+           (readme (doom-path dir "README.org")))
+      (unless (file-directory-p dir)
+        (user-error "Can't find module: %s %s" group module))
+      (if (and (not visit-dir?) (file-exists-p readme))
+          (let ((case-fold-search t))
+            (find-file readme)
+            (when (derived-mode-p 'org-mode)
+              (goto-char (point-min))
+              (with-demoted-errors "%s"
+                (re-search-forward
+                 (if flags "^\\*+ Module flags" "^\\* Description"))
+                (when flags
+                  (re-search-forward (format "=\\%s=" (car flags)) nil t))
+                (when (memq (get-char-property (line-end-position) 'invisible)
+                            '(outline org-fold-outline))
+                  (org-show-hidden-entry)))))
+        (doom-project-browse dir)))))
 
 ;;;###autoload
 (defun doom/describe-option (var &optional buffer)

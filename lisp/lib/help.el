@@ -80,13 +80,73 @@ the current major-modea.")
            if (and (boundp mode) (symbol-value mode))
            collect mode))
 
+(defun doom--help-insert-button (label &optional uri line)
+  "Helper function to insert a button at point.
+
+The button will have the text LABEL. If URI is given, the button will open it,
+otherwise the LABEL will be used. If the uri to open is a url it will be opened
+in a browser. If LINE is given (and the uri to open is not a url), then the file
+will open with point on that line."
+  (let ((uri (or uri label)))
+    (insert-text-button
+     label
+     'face 'link
+     'follow-link t
+     'action
+     (if (string-match-p "^https?://" uri)
+         (lambda (_) (browse-url uri))
+       (unless (file-exists-p uri)
+         (error "Path does not exist: %S" uri))
+       (lambda (_)
+         (when (window-dedicated-p)
+           (other-window 1))
+         (find-file uri)
+         (when line
+           (goto-char (point-min))
+           (forward-line (1- line))
+           (recenter)))))))
+
+(defun doom--help-package-configs (package)
+  (let ((default-directory doom-emacs-dir))
+    (split-string
+     (cdr (doom-call-process
+           doom-ripgrep-executable
+           "--no-heading" "--line-number" "--iglob" "!*.org"
+           (format "%s %s($| )"
+                   "(^;;;###package|\\(after!|\\(use-package!)"
+                   package)))
+     "\n" t)))
+
+(defun doom--help-search-prompt (prompt)
+  (let ((query (doom-thing-at-point-or-region)))
+    (if (featurep 'counsel)
+        query
+      (read-string prompt query 'git-grep query))))
+
+(defun doom--help-search (dirs query prompt)
+  (unless doom-ripgrep-executable
+    (user-error "Can't find ripgrep on your system"))
+  (cond ((fboundp 'consult--grep)
+         (consult--grep prompt #'consult--ripgrep-make-builder (cons data-directory dirs) query))
+        ((fboundp 'counsel-rg)
+         (dlet ((counsel-rg-base-command
+                 (if (stringp counsel-rg-base-command)
+                     (format counsel-rg-base-command
+                             (concat "%s " (mapconcat #'shell-quote-argument dirs " ")))
+                   (append counsel-rg-base-command dirs))))
+           (counsel-rg query nil "-Lz" (concat prompt ": "))))
+        ;; TODO: Helm support?
+        ((grep-find
+          (string-join
+           (append (list doom-ripgrep-executable
+                         "-L" "--search-zip" "--no-heading" "--color=never"
+                         (shell-quote-argument query))
+                   (mapcar #'shell-quote-argument dirs))
+           " ")))))
+
 
 ;;
 ;;; * Custom describe commands
-
-;;;###autoload (defalias 'doom/describe-autodefs #'doom/help-autodefs)
-;;;###autoload (defalias 'doom/describe-module   #'doom/help-modules)
-;;;###autoload (defalias 'doom/describe-package  #'doom/help-packages)
 
 ;;;###autoload
 (defun doom/describe-active-minor-mode (mode)
@@ -127,33 +187,8 @@ selection of all minor-modes, active or not."
       (with-selected-window (posn-window event)
         (describe-char (posn-point event))))))
 
-
-;;
-;;; * Documentation commands
-
 ;;;###autoload
-(defun doom/homepage ()
-  "Open the doom emacs homepage in the browser."
-  (interactive)
-  (browse-url "https://doomemacs.org"))
-
-;;;###autoload
-(defun doom/report-bug (repo)
-  "Create a new issue in REPO or our Github Discussions board."
-  (interactive
-   (list (completing-read
-          "In which repo? " '("doomemacs/core"
-                              "doomemacs/modules"
-                              "doomemacs/modules-contrib"
-                              "I don't know"))))
-
-  (browse-url
-   (if (equal repo "I don't know")
-       "https://github.com/orgs/doomemacs/discussions/new?category=issues"
-     (format "https://github.com/%s/issues/new?template=bug_report.yml" repo))))
-
-;;;###autoload
-(defun doom/help-autodefs (autodef)
+(defun doom/describe-autodef (autodef)
   "Open documentation for an autodef.
 
 An autodef is a Doom concept. It is a function or macro that is always defined,
@@ -172,7 +207,7 @@ without needing to check if they are available."
           (sym (symbol-at-point))
           (autodef
            (completing-read
-            "Describe setter: "
+            "Describe autodef: "
             ;; REVIEW: Could be cleaner (refactor me!)
             (cl-loop with maxwidth = (apply #'max (mapcar #'length (mapcar #'symbol-name settings)))
                      for def in (sort settings #'string-lessp)
@@ -236,7 +271,7 @@ without needing to check if they are available."
                    (symbol-name (cadr mod)))))))
 
 ;;;###autoload
-(defun doom/help-modules (category module &optional visit-dir)
+(defun doom/describe-module (category module &optional visit-dir)
   "Open the documentation for a Doom module.
 
 CATEGORY is a keyword and MODULE is a symbol. e.g. :editor and \\='evil.
@@ -277,89 +312,40 @@ current file is in, or d) the module associated with the current major mode (see
            (doom-project-browse (file-name-as-directory path)))
           ((user-error "Aborted module lookup")))))
 
-(defun doom--help-variable-p (sym)
-  "TODO"
-  (or (get sym 'variable-documentation)
-      (and (boundp sym)
-           (not (keywordp sym))
-           (not (memq sym '(t nil))))))
-
 ;;;###autoload
-(defun doom/help-custom-variable (var)
-  "Look up documentation for a custom variable.
+(defun doom/describe-option (var &optional buffer)
+  "Look up documentation for a user option.
 
-Unlike `describe-variable' or `helpful-variable', which casts a wider net that
-includes internal variables, this only lists variables that exist to be
-customized (defined with `defcustom')."
+Unlike `describe-variable', which casts a wider net that includes internal
+variables, this only lists variables that exist to be customized (defined with
+`defcustom')."
   (interactive
    (list
-    (intern (completing-read
-             "Custom variable: " obarray
-             (lambda (sym)
-               (and (doom--help-variable-p sym)
-                    (custom-variable-p sym)
-                    ;; Exclude minor mode state variables, which aren't meant to
-                    ;; be modified directly, but through their associated
-                    ;; function.
-                    (not (or (and (string-suffix-p "-mode" (symbol-name sym))
-                                  (fboundp sym))
-                             (eq (get sym 'custom-set) 'custom-set-minor-mode)))))
-             t nil nil (let ((var (variable-at-point)))
-                         ;; `variable-at-point' uses 0 rather than nil to
-                         ;; signify no symbol at point (presumably because 'nil
-                         ;; is a symbol).
-                         (unless (symbolp var)
-                           (setq var nil))
-                         (when (doom--help-variable-p var)
-                           var))))))
-  (funcall (or (command-remapping #'describe-variable)
-               #'describe-variable)
-           var))
-
-
-;;
-;;; * doom/help-packages
-
-(defun doom--help-insert-button (label &optional uri line)
-  "Helper function to insert a button at point.
-
-The button will have the text LABEL. If URI is given, the button will open it,
-otherwise the LABEL will be used. If the uri to open is a url it will be opened
-in a browser. If LINE is given (and the uri to open is not a url), then the file
-will open with point on that line."
-  (let ((uri (or uri label)))
-    (insert-text-button
-     label
-     'face 'link
-     'follow-link t
-     'action
-     (if (string-match-p "^https?://" uri)
-         (lambda (_) (browse-url uri))
-       (unless (file-exists-p uri)
-         (error "Path does not exist: %S" uri))
-       (lambda (_)
-         (when (window-dedicated-p)
-           (other-window 1))
-         (find-file uri)
-         (when line
-           (goto-char (point-min))
-           (forward-line (1- line))
-           (recenter)))))))
-
-(defun doom--help-package-configs (package)
-  (let ((default-directory doom-emacs-dir))
-    (split-string
-     (cdr (doom-call-process
-           doom-ripgrep-executable
-           "--no-heading" "--line-number" "--iglob" "!*.org"
-           (format "%s %s($| )"
-                   "(^;;;###package|\\(after!|\\(use-package!)"
-                   package)))
-     "\n" t)))
+    (letf! (defun optionp (sym)
+             (and (symbolp sym)
+                  (or (get sym 'variable-documentation)
+                      (and (boundp sym)
+                           (not (keywordp sym))
+                           (not (memq sym '(t nil)))))
+                  (custom-variable-p sym)
+                  ;; Exclude minor mode state variables, which aren't meant to
+                  ;; be modified directly, but through their associated
+                  ;; function.
+                  (not (or (and (string-suffix-p "-mode" (symbol-name sym))
+                                (fboundp sym))
+                           (eq (get sym 'custom-set) 'custom-set-minor-mode)))))
+      (intern (completing-read
+               "Describe option: " obarray
+               #'optionp t nil nil
+               (let ((var (variable-at-point)))
+                 ;; `variable-at-point' uses 0 rather than nil to signify no
+                 ;; symbol at point (presumably because 'nil is a symbol).
+                 (if (optionp var) var)))))))
+  (describe-variable var buffer))
 
 (defvar doom--help-packages-list nil)
 ;;;###autoload
-(defun doom/help-packages (package)
+(defun doom/describe-package (package)
   "Like `describe-package', but for packages installed by Doom modules.
 
 Only shows installed packages. Includes information about where packages are
@@ -397,7 +383,7 @@ If prefix arg is present, refresh the cache."
                           (when guess (symbol-name guess))))))))
   ;; REVIEW: Refactor me.
   (doom-initialize-packages)
-  (help-setup-xref (list #'doom/help-packages package)
+  (help-setup-xref (list #'doom/describe-package package)
                    (called-interactively-p 'interactive))
   (with-help-window (help-buffer)
     (with-current-buffer standard-output
@@ -518,30 +504,51 @@ If prefix arg is present, refresh the cache."
           (insert "This package is not configured anywhere"))
         (goto-char (point-min))))))
 
+
+;;
+;;; * Misc help commands
+
+;;;###autoload
+(defun doom/homepage ()
+  "Open the doom emacs homepage in the browser."
+  (interactive)
+  (browse-url "https://doomemacs.org"))
+
+;;;###autoload
+(defun doom/report-bug (repo)
+  "Create a new issue in REPO or our Github Discussions board."
+  (interactive
+   (list (completing-read
+          "In which repo? " '("doomemacs/core"
+                              "doomemacs/modules"
+                              "doomemacs/modules-contrib"
+                              "I don't know"))))
+  (browse-url
+   (if (equal repo "I don't know")
+       "https://github.com/orgs/doomemacs/discussions/new?category=issues"
+     (format "https://github.com/%s/issues/new?template=bug_report.yml" repo))))
+
 (defvar doom--package-cache nil)
 (defun doom--package-list (&optional prompt)
+  (require 'finder-inf nil t)
+  (unless package--initialized (package-initialize t))
   (let* ((guess (or (function-called-at-point)
-                    (symbol-at-point))))
-    (require 'finder-inf nil t)
-    (unless package--initialized
-      (package-initialize t))
-    (let ((packages (or doom--package-cache
-                        (progn
-                          (message "Reading packages...")
-                          (cl-delete-duplicates
-                           (append (mapcar 'car package-alist)
-                                   (mapcar 'car package--builtins)
-                                   (mapcar 'car package-archive-contents)))))))
-      (setq doom--package-cache packages)
-      (unless (memq guess packages)
-        (setq guess nil))
-      (intern (completing-read (or prompt
-                                   (if guess
-                                       (format "Select package to search for (default %s): "
-                                               guess)
-                                     "Describe package: "))
-                               packages nil t nil nil
-                               (if guess (symbol-name guess)))))))
+                    (symbol-at-point)))
+         (packages
+          (with-memoization doom--package-cache
+            (with-temp-message "Reading packages..."
+              (delete-dups
+               (append (mapcar #'car package-alist)
+                       (mapcar #'car package--builtins)
+                       (mapcar #'car package-archive-contents))))))
+         (guess (if (memq guess packages) guess)))
+    (intern (completing-read (or prompt
+                                 (if guess
+                                     (format "Select package to search for (default %s): "
+                                             guess)
+                                   "Describe package: "))
+                             packages nil t nil nil
+                             (if guess (symbol-name guess))))))
 
 ;;;###autoload
 (defun doom/help-package-config (package)
@@ -564,33 +571,6 @@ config blocks in your private config."
 
 ;;;###autoload
 (defalias 'doom/help-package-homepage #'straight-visit-package-website)
-
-(defun doom--help-search-prompt (prompt)
-  (let ((query (doom-thing-at-point-or-region)))
-    (if (featurep 'counsel)
-        query
-      (read-string prompt query 'git-grep query))))
-
-(defun doom--help-search (dirs query prompt)
-  (unless doom-ripgrep-executable
-    (user-error "Can't find ripgrep on your system"))
-  (cond ((fboundp 'consult--grep)
-         (consult--grep prompt #'consult--ripgrep-make-builder (cons data-directory dirs) query))
-        ((fboundp 'counsel-rg)
-         (dlet ((counsel-rg-base-command
-                 (if (stringp counsel-rg-base-command)
-                     (format counsel-rg-base-command
-                             (concat "%s " (mapconcat #'shell-quote-argument dirs " ")))
-                   (append counsel-rg-base-command dirs))))
-           (counsel-rg query nil "-Lz" (concat prompt ": "))))
-        ;; TODO: Helm support?
-        ((grep-find
-          (string-join
-           (append (list doom-ripgrep-executable
-                         "-L" "--search-zip" "--no-heading" "--color=never"
-                         (shell-quote-argument query))
-                   (mapcar #'shell-quote-argument dirs))
-           " ")))))
 
 ;;;###autoload
 (defun doom/help-search-load-path (query)
@@ -636,6 +616,18 @@ Uses the symbol at point or the current selection, if available."
 
 ;;;###autoload
 (defalias 'doom/help-search-news #'doom/docs-headings)
+
+;;;###autoload
+(defalias 'doom/help-autodefs #'doom/describe-autodef)
+
+;;;###autoload
+(defalias 'doom/help-packages #'doom/describe-package)
+
+;;;###autoload
+(defalias 'doom/help-modules #'doom/describe-module)
+
+;;;###autoload
+(defalias 'doom/help-custom-variable #'doom/describe-option)
 
 (provide 'doom-lib '(help))
 ;;; help.el ends here

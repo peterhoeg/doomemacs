@@ -156,6 +156,14 @@ Falls back to unicode icons, where specified, omitting icons otherwise.")
     ,@(cl-remove (doom-user-dir "modules/") doom-module-load-path
                  :test #'file-equal-p)))
 
+(defun doom-docs-find-file (file &optional message)
+  "Visit FILE while displaying MESSAGE.
+
+If MESSAGE is omitted/nil, no message is displayed. Also defers GC to ensure
+FILE loads as fast as possible (most beneficial for first-time load)."
+  (with-temp-message message
+    (with-delayed-gc! (quiet! (find-file file)))))
+
 (defun doom-docs--icon (icon label &rest plist)
   "Prefix LABEL with ICON (from nerd-icons).
 
@@ -1200,8 +1208,8 @@ If the prefix arg is set, open docs.doomemacs.org instead.
   (interactive '(nil interactive))
   (if current-prefix-arg
       (browse-url "https://docs.doomemacs.org")
-    (with-temp-message (if interactive? "Loading Doom manual...")
-      (quiet! (find-file (or file (doom-path doom-docs-dir "index.org")))))))
+    (doom-docs-find-file (or file (doom-path doom-docs-dir "index.org"))
+                         (if interactive? "Loading Doom manual..."))))
 
 ;;;###autoload
 (defun doom/docs-module (key &optional visit-dir?)
@@ -1225,9 +1233,7 @@ documentation.
         (user-error "Can't find module: %s %s" group module))
       (if (and (not visit-dir?) (file-exists-p readme))
           (let ((case-fold-search t))
-            (with-temp-message "Loading module documentation..."
-              ;; Opening Org for the first time will be slow
-              (with-delayed-gc! (quiet! (find-file readme))))
+            (doom-docs-find-file readme "Loading module documentation...")
             (when (derived-mode-p 'org-mode)
               (goto-char (point-min))
               (with-demoted-errors "%s"
@@ -1330,7 +1336,7 @@ documentation.
     (seq-let (file location) (cdr (assoc result alist))
       (if (functionp action)
           (funcall action file location)
-        (find-file file)
+        (doom-docs-find-file file "Loading doom-docs file...")
         (cond ((functionp location) (funcall location))
               (location (goto-char location)))
         (ignore-errors

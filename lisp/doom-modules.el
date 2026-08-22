@@ -572,10 +572,8 @@ MODULE are symbols and GROUP is a keyword."
                 (when-let* ((key (doom-module-at-point)))
                   (format-spec "%g %m"
                                `((?g . ,(nth 1 key))
-                                 (?m . ,(or (nth 2 key) "")))))))
-       (key (doom-module-key<-str choice)))
-    ;; DEPRECATED: Key format will change in v3
-    (cons (cadr key) (caddr key))))
+                                 (?m . ,(or (nth 2 key) ""))))))))
+    (doom-module-key<-str choice)))
 
 
 ;;; ** doom-module-context

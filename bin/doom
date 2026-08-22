@@ -182,8 +182,8 @@ SEE ALSO:
   https://doomemacs.org               Homepage
   https://docs.doomemacs.org          Official documentation
   https://wiki.doomemacs.org          Community wiki
-  https://doomemacs.org/discuss       Github discussions & user support board
-  https://doomemacs.org/discord       Discord chat server"
+  https://discuss.doomemacs.org       Github discussions & user support board
+  https://discord.doomemacs.org       Discord chat server"
   :partial t)
 
 (defcli! :before

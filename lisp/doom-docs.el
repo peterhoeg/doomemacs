@@ -1193,16 +1193,15 @@ If FORCE? is non-nil, do it even if they're already loaded."
 ;;;###autoload
 (defun doom/docs (&optional file interactive?)
   "View Doom's documentation FILE.
+
+If the prefix arg is set, open docs.doomemacs.org instead.
+
 \(fn &optional FILE INTERACTIVE?)"
   (interactive '(nil interactive))
-  (with-temp-message (if interactive? "Loading Doom manual...")
-    (quiet! (find-file (or file (doom-path doom-docs-dir "index.org"))))))
-
-;; ;;;###autoload
-;; (defun doom/docs-homepage ()
-;;   "Open the browser to visit docs.doomemacs.org."
-;;   (interactive)
-;;   (browse-url "https://docs.doomemacs.org"))
+  (if current-prefix-arg
+      (browse-url "https://docs.doomemacs.org")
+    (with-temp-message (if interactive? "Loading Doom manual...")
+      (quiet! (find-file (or file (doom-path doom-docs-dir "index.org")))))))
 
 ;;;###autoload
 (defun doom/docs-module (key &optional visit-dir?)

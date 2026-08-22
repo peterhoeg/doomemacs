@@ -1204,6 +1204,7 @@ If FORCE? is non-nil, do it even if they're already loaded."
 ;;   (interactive)
 ;;   (browse-url "https://docs.doomemacs.org"))
 
+;;;###autoload
 (defun doom/docs-module (key &optional visit-dir?)
   "Open the documentation for a Doom module by KEY.
 

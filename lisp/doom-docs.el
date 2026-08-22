@@ -1225,7 +1225,9 @@ documentation.
         (user-error "Can't find module: %s %s" group module))
       (if (and (not visit-dir?) (file-exists-p readme))
           (let ((case-fold-search t))
-            (find-file readme)
+            (with-temp-message "Loading module documentation..."
+              ;; Opening Org for the first time will be slow
+              (with-delayed-gc! (quiet! (find-file readme))))
             (when (derived-mode-p 'org-mode)
               (goto-char (point-min))
               (with-demoted-errors "%s"

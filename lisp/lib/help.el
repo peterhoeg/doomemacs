@@ -170,40 +170,10 @@ without needing to check if they are available."
         (helpful-callable fn)
       (describe-function fn))))
 
+;; TODO: Make into a proper describe-module command (i.e. generate a help buffer
+;;   with deduced state with package/source associations documented) in v3.
 ;;;###autoload
-(defun doom/describe-module (key &optional visit-dir?)
-  "Open the documentation for a Doom module by KEY.
-
-See `doom-module-key' for details on SOURCE, GROUP, and MODULE. Automatically
-selects the module at point (in `doom!'), the module derived from a `modulep!'
-call, or the module that contains the current file.
-
-If VISIT-DIR? is non-nil, visit the module's directory rather than its
-documentation.
-
-\(fn (SOURCE GROUP MODULE [FLAGS...]) &optional VISIT-DIR?)"
-  (interactive
-   (list (doom-module-completing-read "Describe module: ")
-         current-prefix-arg))
-  (cl-destructuring-bind (_source group module . flags) key
-    (let* ((dir (doom-module-locate-path (cons group module)))
-           (readme (doom-path dir "README.org")))
-      (unless (file-directory-p dir)
-        (user-error "Can't find module: %s %s" group module))
-      (if (and (not visit-dir?) (file-exists-p readme))
-          (let ((case-fold-search t))
-            (find-file readme)
-            (when (derived-mode-p 'org-mode)
-              (goto-char (point-min))
-              (with-demoted-errors "%s"
-                (re-search-forward
-                 (if flags "^\\*+ Module flags" "^\\* Description"))
-                (when flags
-                  (re-search-forward (format "=\\%s=" (car flags)) nil t))
-                (when (memq (get-char-property (line-end-position) 'invisible)
-                            '(outline org-fold-outline))
-                  (org-show-hidden-entry)))))
-        (doom-project-browse dir)))))
+(defalias 'doom/describe-module #'doom/docs-module)
 
 ;;;###autoload
 (defun doom/describe-option (var &optional buffer)

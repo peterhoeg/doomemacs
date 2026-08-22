@@ -213,10 +213,11 @@ properties:
            (cons (doom-module-group key) (doom-module-name key)))
           ((doom-module-context-p key)
            (doom-module-context-key key))
-          ((car-safe key)
-           (if (nlistp (cdr-safe key))
-               key
-             (cons (car key) (cadr key))))
+          ((consp key)
+           (cond ((nlistp (cdr-safe key)) key)
+                 ;; Handle v3 keys
+                 ((> (length key) 2) (cons (cadr key) (caddr key)))
+                 ((cons (car key) (cadr key)))))
           ((signal 'wrong-type-argument
                    `((or doom-module doom-module-context cons) ,key)))))
 

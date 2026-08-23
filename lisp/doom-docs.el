@@ -1284,78 +1284,74 @@ documentation.
            :in doom-emacs-dir
            :prompt "Search documentation for: "))
 
-(cl-defsubst doom-docs--headings (files &key depth mindepth include-files &allow-other-keys)
+(cl-defun doom-docs--headings (files &key depth mindepth include-files &allow-other-keys)
   (let ((default-directory doom-docs-dir)
-        (depth (if (integerp depth) depth))
-        (mindepth (if (integerp mindepth) mindepth)))
+        (depth (if (integerp depth) depth 999))
+        (mindepth (if (integerp mindepth) mindepth 0)))
     (dlet ((org-agenda-files (mapcar #'expand-file-name (ensure-list files)))
            (org-inhibit-startup t))
-      (with-temp-message "Loading search results..."
-        (require 'org)
-        (unwind-protect
-            (delq
-             nil
-             (org-map-entries
-              (lambda ()
-                (cl-destructuring-bind (level text tags)
-                    (list (org-current-level)
-                          (org-get-heading t t t t)
-                          (org-get-tags))
-                  (when (and (or (null depth)
-                                 (<= level depth))
-                             (or (null mindepth)
-                                 (>= level mindepth))
-                             (or (null tags)
-                                 (not (cl-loop for tag in tags
-                                               if (string-match-p "^TOC\\|nosearch$" tag)
-                                               return t))))
-                    (let ((path  (org-get-outline-path))
-                          (title (org-collect-keywords '("TITLE") '("TITLE"))))
-                      (list (string-join
-                             (list (string-join
-                                    (append (when include-files
-                                              (list (or (cdr (assoc "TITLE" title))
-                                                        (file-relative-name (buffer-file-name)))))
-                                            path
-                                            (when text
-                                              (list (replace-regexp-in-string org-link-any-re "\\4" text))))
-                                    " > ")
-                                   tags)
-                             " ")
-                            (buffer-file-name)
-                            (point))))))
-              t 'agenda))
-          (mapc #'kill-buffer org-agenda-new-buffers)
-          (setq org-agenda-new-buffers nil))))))
-
-(cl-defsubst doom-docs-completing-read-headings
-    (prompt files &rest plist &key _depth _mindepth _include-files initial-input action)
-  (let* ((alist (apply #'doom-docs--headings files plist))
-         (result (or (completing-read prompt alist nil nil initial-input)
-                     (user-error "Aborted"))))
-    (seq-let (file location) (cdr (assoc result alist))
-      (if (functionp action)
-          (funcall action file location)
-        (doom-docs-find-file file "Loading doom-docs file...")
-        (cond ((functionp location) (funcall location))
-              (location (goto-char location)))
-        (ignore-errors
-          (when (doom-docs--invisible-p (point))
-            (save-excursion
-              (outline-previous-visible-heading 1)
-              (org-show-subtree))))))))
+      (require 'org)
+      (unwind-protect
+          (delq
+           nil
+           (org-map-entries
+            (lambda ()
+              (let ((level (org-current-level))
+                    tags)
+                (when (and (<= level depth)
+                           (>= level mindepth)
+                           (not (cl-loop for tag in (setq tags (org-get-tags))
+                                         if (or (member tag '("hide" "nosearch" "noorg"))
+                                                (string-prefix-p "TOC" tag))
+                                         return t)))
+                  `(:level ,level
+                    :title ,(cdr (assoc "TITLE" (org-collect-keywords '("TITLE") '("TITLE"))))
+                    :path ,(org-get-outline-path)
+                    :heading ,(replace-regexp-in-string org-link-any-re "\\4" (substring-no-properties (org-get-heading t t t t)))
+                    :tags ,tags
+                    :file ,(buffer-file-name)
+                    :pos  ,(point)))))
+            t 'agenda))
+        (mapc #'kill-buffer org-agenda-new-buffers)
+        (setq org-agenda-new-buffers nil)))))
 
 ;;;###autoload
-(defun doom/docs-headings (&optional initial-input)
-  "Search Doom documentation headlings and jump to a headline."
-  (interactive)
+(defun doom/docs-headings (files &optional initial-input)
+  "Jump to an org heading in org FILES."
+  (interactive (list (doom-glob doom-docs-dir "*.org")))
   (with-delayed-gc!
-    (doom-docs-completing-read-headings
-     "Find in Doom docs: "
-     (doom-files-in doom-docs-dir :match "\\.org\\'")
-     :depth 3
-     :include-files t
-     :initial-input initial-input)))
+    (when-let*
+        ((headings
+          (with-temp-message "Loading search results..."
+            (doom-docs--headings files :depth 3 :include-files t)))
+         (cands
+          (cl-loop for cand in headings
+                   collect
+                   (cons (format "%s  %s"
+                                 (string-join `(,(propertize (plist-get cand :title) 'face 'org-document-title)
+                                                ,@(plist-get cand :path)
+                                                ,(plist-get cand :heading))
+                                              (propertize " > " 'face 'shadow))
+                                 (propertize (string-join (plist-get cand :tags) ":") 'face 'shadow))
+                         cand)))
+         (choice
+          (completing-read
+           "Find in Doom docs: "
+           (lambda (str pred action)
+             (if (eq action 'metadata)
+                 `(metadata
+                   (category . org-heading)
+                   (display-sort-function . identity))
+               (complete-with-action action cands str pred)))
+           nil t initial-input))
+         (choice (cdr (assoc choice cands)))
+         (file (plist-get choice :file))
+         (pos (plist-get choice :pos)))
+      (doom-docs-find-file file "Loading doom-docs file...")
+      (when pos
+        (goto-char pos)
+        (when (doom-docs--invisible-p (point))
+          (org-show-subtree))))))
 
 (provide 'doom-docs)
 ;;; doom-docs.el ends here

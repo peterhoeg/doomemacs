@@ -632,7 +632,7 @@ This primes `org-mode' for reading."
     map))
 
 ;;;###autoload
-(define-derived-mode doom-docs-mode org-mode "Doom Manual"
+(define-derived-mode doom-docs-mode org-mode "Doom Docs"
   "A derivative of `org-mode' for Doom's documentation files."
   :after-hook (doom-docs-mode--post-hook)
   (with-delayed-gc!

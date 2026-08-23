@@ -763,13 +763,23 @@ This primes `org-mode' for reading."
                       (icon (if (functionp icon) (funcall icon link) icon)))
             (add-text-properties beg (1+ beg) `(display ,(concat icon " ")))))
         (unless desc
-          (let ((offset (if bracket? 2 0)))
+          (let ((offset (if bracket? 2 0))
+                tagend)
             (add-text-properties
-             (+ beg offset) (save-excursion
-                              (goto-char (+ beg offset))
-                              ;; Can't use :type because it could be aliased
-                              (+ 1 (point) (skip-chars-forward "^:" end)))
-             '(invisible t intangible t cursor-intangible t))))))))
+             (+ beg offset)
+             (save-excursion
+               (goto-char (+ beg offset))
+               ;; Can't use :type because it could be aliased
+               (skip-chars-forward "^:" end)
+               (setq tagend (1+ (point))))
+             '(invisible t intangible t cursor-intangible t))
+            (save-match-data
+              (and (equal (org-element-property :type context) "repo")
+                   (string-match "^\\(.+@\\)?\\([a-z0-9]\\{8,40\\}\\)$" target)
+                   (add-text-properties
+                    (+ tagend (length (match-string 1 target)) 7)
+                    (+ tagend (length target) offset)
+                    `(invisible t intangible t cursor-intangible t))))))))))
 
 
 ;;; ** kbd:*

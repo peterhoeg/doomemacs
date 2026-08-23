@@ -448,7 +448,7 @@ See `doom-module-key' for the format and documentation for module keys."
   (cons t (mapcar #'intern (split-string str " " t))))
 
 ;;;###autoload
-(defun doom-module-at-point ()
+(defun doom-module-at-point (&optional fallback?)
   "Return the module under point.
 
 Determines if the point is in a `doom!' block, a `modulep!' call, or returns the
@@ -512,7 +512,7 @@ current file's containing module in the format of a list (SOURCE GROUP MODULE
                                        flag symbol)
                                (setq module symbol))))
                          (list t category module flag))))))))))
-        (buffer-file-name
+        ((and fallback? buffer-file-name)
          (when-let* ((mod (doom-module-from-path buffer-file-name)))
            (append (list t (car mod) (cdr mod))
                    (doom-module-get mod :flags))))))
@@ -570,7 +570,7 @@ MODULE are symbols and GROUP is a keyword."
                           (cycle-sort-function . ,sortfn))
                       (complete-with-action action cands str pred))))
                 nil t nil nil
-                (when-let* ((key (doom-module-at-point)))
+                (when-let* ((key (doom-module-at-point t)))
                   (format-spec "%g %m"
                                `((?g . ,(nth 1 key))
                                  (?m . ,(or (nth 2 key) ""))))))))

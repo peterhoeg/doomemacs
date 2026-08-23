@@ -426,14 +426,14 @@ Returns PROP if specified, the context otherwise."
                                  (line-end-position)
                                  doom-docs-minor-mode))))))
 
-(defvar doom-docs--babel-cache nil)
-(defun doom-docs--hide-src-blocks-h ()
-  "Hide babel blocks (and/or their results) depending on their :exports arg."
+(defvar doom-docs--block-cache nil)
+(defun doom-docs--hide-blocks-h ()
+  "Hide blocks (and/or their results) depending on their :exports arg."
   (doom-docs--with-buffer
    (let ((inhibit-read-only t))
      (goto-char (point-min))
-     (make-local-variable 'doom-docs--babel-cache)
-     (while (re-search-forward org-babel-src-block-regexp nil t)
+     (make-local-variable 'doom-docs--block-cache)
+     (while (re-search-forward org-block-regexp nil t)
        (let* ((beg (match-beginning 0))
               (end (save-excursion (goto-char (match-end 0))
                                    (skip-chars-forward "\n")
@@ -441,39 +441,54 @@ Returns PROP if specified, the context otherwise."
               (exports
                (save-excursion
                  (goto-char beg)
-                 (and (re-search-forward " :exports \\([^ \n]+\\)" (line-end-position) t)
-                      (match-string-no-properties 1))))
-              (results (org-babel-where-is-src-block-result)))
+                 (if (and (re-search-forward " :hide \\([^ \n]+\\)" (point-at-eol) t)
+                          (equal (match-string-no-properties 1) "yes"))
+                     "none"
+                   (and (re-search-forward " :exports \\([^ \n]+\\)" (point-at-eol) t)
+                        (match-string-no-properties 1)))))
+              (src? (org-in-src-block-p))
+              (results (if src? (org-babel-where-is-src-block-result))))
          (save-excursion
-           (when (and (if (stringp exports)
+           (when (and src?
+                      (if (stringp exports)
                           (member exports '("results" "both"))
                         org-export-use-babel)
                       (not results)
                       doom-docs-minor-mode)
-             (cl-pushnew beg doom-docs--babel-cache)
-             (quiet! (org-babel-execute-src-block))
-             (setq results (org-babel-where-is-src-block-result))
-             (org-element-cache-refresh beg)
-             (restore-buffer-modified-p nil)))
+             (cl-pushnew beg doom-docs--block-cache :test #'=)
+             (let (org-confirm-babel-evaluate)
+               (when (and (org-babel-check-confirm-evaluate
+                           (org-babel-get-src-block-info))
+                          (org-babel-execute-src-block))
+                 (setq results (org-babel-where-is-src-block-result))
+                 (when (fboundp 'org-element-cache-refresh)
+                   (org-element-cache-refresh beg))
+                 (restore-buffer-modified-p nil)))))
          (save-excursion
            (when results
              (when (member exports '("code" "both" "t"))
                (setq beg results))
              (when (member exports '("none" "code"))
                (setq end (progn (goto-char results)
-                                (goto-char (org-babel-result-end))
+                                (goto-char (if src? (org-babel-result-end) end))
                                 (skip-chars-forward "\n")
                                 (point))))))
-         (unless (member exports '(nil "both" "code" "t"))
+         ;; none = no export, no org
+         ;; only = export, no org
+         ;; both = export, org
+         ;; docs = no export, org
+         (when (if src?
+                   (not (member exports '(nil "both" "code" "t")))
+                 (member exports '("none" "only")))
            (doom-docs--show-region beg end doom-docs-minor-mode))))
      (unless doom-docs-minor-mode
        (save-excursion
-         (dolist (pos doom-docs--babel-cache)
+         (dolist (pos doom-docs--block-cache)
            (goto-char pos)
            (org-babel-remove-result)
            (when (fboundp 'org-element-cache-refresh)
              (org-element-cache-refresh pos)))
-         (kill-local-variable 'doom-docs--babel-cache)
+         (kill-local-variable 'doom-docs--block-cache)
          (restore-buffer-modified-p nil))))))
 
 (defun doom-docs--prettify-notices-h ()
@@ -590,7 +605,7 @@ This primes `org-mode' for reading."
            #'doom-docs--hide-meta-h
            #'doom-docs--hide-tags-h
            #'doom-docs--hide-drawers-h
-           #'doom-docs--hide-src-blocks-h
+           #'doom-docs--hide-blocks-h
            #'doom-docs--prettify-notices-h)
 
 

@@ -95,11 +95,11 @@ Falls back to unicode icons, where specified, omitting icons otherwise.")
   :group 'doom)
 
 (defface doom-docs-title '((t :inherit org-document-title :weight bold :height 1.4))
-  "Face used for #+TITLEs in `doom-docs-minor-mode'."
+  "Face used for #+TITLEs in `doom-docs-view-mode'."
   :group 'doom)
 
 (defface doom-docs-info '((t :inherit org-document-info :weight normal :height 1.15))
-  "Face used for #+SUBTITLE, #+DATE, #+AUTHOR, #+EMAIL in `doom-docs-minor-mode'."
+  "Face used for #+SUBTITLE, #+DATE, #+AUTHOR, #+EMAIL in `doom-docs-view-mode'."
   :group 'doom)
 
 (defface doom-docs-symbol
@@ -378,7 +378,7 @@ Returns PROP if specified, the context otherwise."
                     ((looking-at "+\\(?:begin\\|end\\)_\\([^ \n]+\\)")
                      (line-end-position))
                     ((line-beginning-position 2)))
-              doom-docs-minor-mode))))))))
+              doom-docs-view-mode))))))))
 
 (defun doom-docs--hide-drawers-h ()
   "Hide all property drawers."
@@ -395,7 +395,7 @@ Returns PROP if specified, the context otherwise."
          (when (fboundp 'org-element-property-inherited)  ; Org 9.7+
            (when (org-element-property-inherited :level el)
              (cl-decf end)))
-         (doom-docs--show-region beg end doom-docs-minor-mode))))
+         (doom-docs--show-region beg end doom-docs-view-mode))))
     ;; FIX: If the cursor remains within a newly folded region, that folk will
     ;;   come undone, so we move it.
     (if pt (goto-char pt))))
@@ -418,13 +418,13 @@ Returns PROP if specified, the context otherwise."
                                      (if (and (bolp) (eolp))
                                          (line-beginning-position)
                                        (line-end-position 0)))
-                                   doom-docs-minor-mode)
+                                   doom-docs-view-mode)
          (doom-docs--show-region (save-excursion
                                    (goto-char (line-beginning-position))
                                    (re-search-forward " +:[^ ]" (line-end-position))
                                    (match-beginning 0))
                                  (line-end-position)
-                                 doom-docs-minor-mode))))))
+                                 doom-docs-view-mode))))))
 
 (defvar doom-docs--block-cache nil)
 (defun doom-docs--hide-blocks-h ()
@@ -454,7 +454,7 @@ Returns PROP if specified, the context otherwise."
                           (member exports '("results" "both"))
                         org-export-use-babel)
                       (not results)
-                      doom-docs-minor-mode)
+                      doom-docs-view-mode)
              (cl-pushnew beg doom-docs--block-cache :test #'=)
              (let (org-confirm-babel-evaluate)
                (when (and (org-babel-check-confirm-evaluate
@@ -480,8 +480,8 @@ Returns PROP if specified, the context otherwise."
          (when (if src?
                    (not (member exports '(nil "both" "code" "t")))
                  (member exports '("none" "only")))
-           (doom-docs--show-region beg end doom-docs-minor-mode))))
-     (unless doom-docs-minor-mode
+           (doom-docs--show-region beg end doom-docs-view-mode))))
+     (unless doom-docs-view-mode
        (save-excursion
          (dolist (pos doom-docs--block-cache)
            (goto-char pos)
@@ -496,7 +496,7 @@ Returns PROP if specified, the context otherwise."
   (doom-docs--with-buffer
    (goto-char (point-min))
    (remove-overlays (point-min) (point-max) 'doom-docs-notice t)
-   (when doom-docs-minor-mode
+   (when doom-docs-view-mode
      (let ((re (format "^\\( *\\)#\\+begin_quote +%s"
                        (regexp-opt (mapcar #'car doom-docs-notice-types)
                                    t))))
@@ -531,9 +531,9 @@ Returns PROP if specified, the context otherwise."
 
 
 ;;
-;;; * `doom-docs-minor-mode'
+;;; * `doom-docs-view-mode'
 
-(defvar doom-docs-minor-mode-alist
+(defvar doom-docs-view-mode-alist
   '((flyspell-mode . -1)
     (flymake-mode . -1)
     (flycheck-mode . -1)
@@ -542,64 +542,75 @@ Returns PROP if specified, the context otherwise."
     (variable-pitch-mode . -1)
     (indent-bars-mode . -1)
     (org-appear-mode . -1))
-  "An alist of minor modes to toggle with `doom-docs-minor-mode'.
+  "An alist of minor modes to toggle with `doom-docs-view-mode'.
 
 The CAR is the minor mode symbol, and CDR should be +1 to enable the mode during
-`doom-docs-minor-mode' or -1 to disable it instead.")
+`doom-docs-view-mode' or -1 to disable it instead.")
 
-(defvar doom-docs--initial-values nil)
-(defvar doom-docs--cookies nil)
+(defvar doom-docs-view-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap read-only-mode] #'doom-docs-view-mode)
+    map))
+
+(defvar-local doom-docs--initial-values nil)
+(defvar-local doom-docs--cookies nil)
+(defvar-local doom-docs--last-state nil)
+(put 'doom-docs--last-state 'permanent-local t)
 ;;;###autoload
-(define-minor-mode doom-docs-minor-mode
+(define-minor-mode doom-docs-view-mode
   "Hides metadata, tags, & drawers and activates all org-mode prettifications.
 This primes `org-mode' for reading."
-  :lighter " Doom Docs"
+  :keymap doom-docs-view-mode-map
   :after-hook (progn
                 (org-restart-font-lock)
                 (if (doom-docs--invisible-p (point))
                     (goto-char (org-find-visible))))
   (unless (derived-mode-p 'org-mode)
     (user-error "Not an org mode buffer"))
+  (setq buffer-read-only doom-docs-view-mode)
   (when (fboundp 'org-fold-add-folding-spec)  ; Org 9.6+
     (org-fold-add-folding-spec
      doom-docs--hidden-spec '(:visible nil
                               :ellipsis nil
                               :isearch-ignore t)))
-  (when doom-docs-minor-mode
-    (make-local-variable 'doom-docs--initial-values))
   (mapc (lambda! ((face . newface))
-          (if doom-docs-minor-mode
+          (if doom-docs-view-mode
               (push (face-remap-add-relative face newface) doom-docs--cookies)
             (mapc #'face-remap-remove-relative doom-docs--cookies)))
         '((org-document-title . doom-docs-title)
           (org-document-info  . doom-docs-info)))
   (mapc (lambda! ((mode . state))
-          (if doom-docs-minor-mode
-              (if (and (boundp mode) (symbol-value mode))
-                  (unless (> state 0)
+          (if doom-docs-view-mode
+              (if (boundp mode)
+                  (when (and (< state 0) (symbol-value mode))
                     (setf (alist-get mode doom-docs--initial-values) t)
                     (funcall mode -1))
-                (unless (< state 0)
+                (when (and (> state 0) (not (symbol-value mode)))
                   (setf (alist-get mode doom-docs--initial-values) nil)
                   (funcall mode +1)))
             (when-let* ((old-val (assq mode doom-docs--initial-values)))
               (funcall mode (if old-val +1 -1)))))
-        doom-docs-minor-mode-alist)
+        doom-docs-view-mode-alist)
   (mapc (lambda (sym)
-          (if doom-docs-minor-mode
+          (if doom-docs-view-mode
               (set (make-local-variable sym) t)
             (kill-local-variable sym)))
         '(org-pretty-entities
           org-descriptive-links
           org-hide-emphasis-markers
           org-hide-macro-markers))
-  (unless doom-docs-minor-mode
-    (kill-local-variable 'doom-docs--initial-values)))
+  (if doom-docs-view-mode
+      (add-hook 'read-only-mode-hook #'doom-docs--turn-off-view-mode-h nil 'local)
+    (remove-hook 'read-only-mode-hook #'doom-docs--turn-off-view-mode-h 'local)))
+
+(defun doom-docs--turn-off-view-mode-h ()
+  (when (and doom-docs-view-mode (not buffer-read-only))
+    (doom-docs-view-mode -1)))
 
 
 ;;; ** Hooks
 
-(add-hook! 'doom-docs-minor-mode-hook
+(add-hook! 'doom-docs-view-mode-hook
            #'doom-docs--display-menu-h
            #'doom-docs--hide-meta-h
            #'doom-docs--hide-tags-h
@@ -616,7 +627,8 @@ This primes `org-mode' for reading."
         (cmd (cmds! buffer-read-only #'kill-current-buffer)))
     (define-key map "q" cmd)
     (define-key map [remap evil-record-macro] cmd)
-    (define-key map "\C-c\C-e" #'read-only-mode)
+    (define-key map [remap read-only-mode] #'doom-docs-view-mode)
+    (define-key map "\C-c\C-e" #'doom-docs-view-mode)
     map))
 
 ;;;###autoload
@@ -692,8 +704,7 @@ This primes `org-mode' for reading."
        (unless (or (bound-and-true-p org-inhibit-startup-visibility-stuff)
                    (not org-startup-folded))
          (dlet (org-cycle-hide-drawer-startup)
-           (org-set-startup-visibility)))))
-    (add-hook 'read-only-mode-hook #'doom-docs--toggle-read-only-h nil 'local)))
+           (org-set-startup-visibility)))))))
 
 (defun doom-docs-mode--post-hook ()
   "Last-minute cleanup after `doom-docs-mode' initializes (and after hooks)."
@@ -706,11 +717,8 @@ This primes `org-mode' for reading."
         (org-modern-mode -1))
       (doom-docs--locations-load nil (list (current-buffer))))))
 
-(defun doom-docs--toggle-read-only-h ()
-  (doom-docs-minor-mode (if buffer-read-only +1 -1)))
-
 ;;;###autoload
-(defun doom-docs-read-only-h ()
+(defun doom-docs-view-mode-h ()
   "Activate `read-only-mode' if the current file exists and is non-empty."
   ;; The rationale: if it's empty or non-existant, you want to write an org
   ;; file, not read it.
@@ -719,9 +727,9 @@ This primes `org-mode' for reading."
                (> (buffer-size) 0)
                (not (string-prefix-p "." (file-name-base file-name)))
                (file-exists-p file-name))
-      (read-only-mode +1))))
+      (doom-docs-view-mode +1))))
 
-(add-hook 'doom-docs-mode-hook #'doom-docs-read-only-h)
+(add-hook 'doom-docs-mode-hook #'doom-docs-view-mode-h)
 
 
 ;;

@@ -541,7 +541,6 @@ Returns PROP if specified, the context otherwise."
     (mixed-pitch-mode . -1)
     (variable-pitch-mode . -1)
     (indent-bars-mode . -1)
-    (org-modern-mode . -1)
     (org-appear-mode . -1))
   "An alist of minor modes to toggle with `doom-docs-minor-mode'.
 
@@ -701,6 +700,10 @@ This primes `org-mode' for reading."
   (unless org-inhibit-startup
     (with-delayed-gc!
       (visual-line-mode -1)  ; doom-docs use hard line wrapping
+      ;; Redundant with `doom-docs-view-mode' and interferes with editing. Doom
+      ;; docs with read-only mode off don't need to be pretty.
+      (when (bound-and-true-p org-modern-mode)
+        (org-modern-mode -1))
       (doom-docs--locations-load nil (list (current-buffer))))))
 
 (defun doom-docs--toggle-read-only-h ()

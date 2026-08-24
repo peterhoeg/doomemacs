@@ -674,7 +674,7 @@ The def* forms accepted are:
                  (setq first
                        (list (nth 0 first)
                              (nth 1 first)
-                             (gensym (format "doom-letf-" target)))))
+                             (gensym "doom-letf-"))))
                (let ((sym (intern (format "%s@%s" target (nth 2 first)))))
                  `(progn
                     (define-advice ,target ,first ,@rest)

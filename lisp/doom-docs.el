@@ -824,8 +824,8 @@ This primes `org-mode' for reading."
            beg
          (+ beg 3 (string-width (org-element-property :type context))))
        end `(display
-                 ,(propertize (concat keystr (make-string total ?\s))
-                              'face 'doom-docs-kbd))))))
+             ,(propertize (concat keystr (make-string total ?\s))
+                          'face 'doom-docs-kbd))))))
 
 (defun doom-docs-link--kbd-help-echo (window object pos)
   (with-selected-window window

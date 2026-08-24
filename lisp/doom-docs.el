@@ -689,7 +689,7 @@ This primes `org-mode' for reading."
                                   org-link-plain-re
                                   org-link-bracket-re
                                   org-link-any-re))
-    (setq-local org-link-parameters (copy-sequence doom-docs--link-parameters))
+    (setq-local org-link-parameters (mapcar #'copy-sequence doom-docs--link-parameters))
     (org-link-make-regexps)
     (if (featurep 'org-element) (org-element-update-syntax))
 

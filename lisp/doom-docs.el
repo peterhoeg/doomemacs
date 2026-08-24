@@ -300,7 +300,7 @@ Returns PROP if specified, the context otherwise."
       (when (memq (car type) '(module group))
         (push (list "Issues" "doom-issues:" "nf-md-flag") rhs)
         (push (list "History" "doom-history:" "nf-md-history") rhs))
-      (push (list "Suggest edits" "doom-contrib-edits:" "nf-md-account_edit" "✎") rhs)
+      (push (list "Suggest edits" "doom-contrib-edit:" "nf-md-account_edit" "✎") rhs)
       (push (list "Help" "doom-help:" "nf-md-timeline_help_outline" "🗎") rhs))
     (let ((left  (mapconcat #'doom-docs--make-header-link (reverse lhs) "  "))
           (right (mapconcat #'doom-docs--make-header-link (reverse rhs) "  ")))

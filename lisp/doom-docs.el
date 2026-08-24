@@ -258,13 +258,6 @@ Returns PROP if specified, the context otherwise."
 
 ;;; ** Navbar
 
-(defvar doom-docs--header-link-keymap
-  (let ((km (make-sparse-keymap)))
-    (define-key km [header-line mouse-2] #'doom-docs--open-header-link)
-    (define-key km [mouse-2] #'doom-docs--open-header-link)
-    (define-key km [follow-link] 'mouse-face)
-    km))
-
 (defun doom-docs--file-type (&optional dir)
   (let ((dir (or dir default-directory))
         key)
@@ -277,13 +270,17 @@ Returns PROP if specified, the context otherwise."
 
 (defun doom-docs--make-header-link (link)
   (cl-destructuring-bind (label target . icons) link
-    (propertize
-     (doom-docs--icon icons label :height 0.6)
-     'face 'doom-docs-header-link
-     'doom-docs-link target
-     'keymap doom-docs--header-link-keymap
-     'help-echo target
-     'mouse-face 'highlight)))
+    (let ((map (make-sparse-keymap)))
+      (define-key map [header-line mouse-2] #'doom-docs--open-header-link)
+      (define-key map [mouse-2] #'doom-docs--open-header-link)
+      (define-key map [follow-link] 'mouse-face)
+      (propertize
+       (doom-docs--icon icons label :height 0.6)
+       'face 'doom-docs-header-link
+       'doom-docs-link target
+       'keymap map
+       'help-echo target
+       'mouse-face 'highlight))))
 
 (defun doom-docs--make-header (type)
   "Create a header string for the current buffer."

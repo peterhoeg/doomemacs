@@ -598,7 +598,9 @@ This primes `org-mode' for reading."
         '(org-pretty-entities
           org-descriptive-links
           org-hide-emphasis-markers
-          org-hide-macro-markers))
+          org-hide-macro-markers
+          ;; Don't prompt to "create headings" on broken links
+          org-link-search-must-match-exact-headline))
   (if doom-docs-view-mode
       (add-hook 'read-only-mode-hook #'doom-docs--turn-off-view-mode-h nil 'local)
     (remove-hook 'read-only-mode-hook #'doom-docs--turn-off-view-mode-h 'local)))

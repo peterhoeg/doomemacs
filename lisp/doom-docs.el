@@ -541,7 +541,8 @@ Returns PROP if specified, the context otherwise."
     (mixed-pitch-mode . -1)
     (variable-pitch-mode . -1)
     (indent-bars-mode . -1)
-    (org-appear-mode . -1))
+    (org-appear-mode . -1)
+    (diff-hl-mode . -1))
   "An alist of minor modes to toggle with `doom-docs-view-mode'.
 
 The CAR is the minor mode symbol, and CDR should be +1 to enable the mode during

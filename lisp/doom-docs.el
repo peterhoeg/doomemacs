@@ -343,12 +343,14 @@ Returns PROP if specified, the context otherwise."
 (defun doom-docs--display-menu-h ()
   "Toggle virtual menu line at top of buffer."
   (setq header-line-format
-        (and buffer-read-only
+        (and doom-docs-view-mode
              (doom-docs--make-header
               (or doom-docs--type
                   (setq-local doom-docs--type
                               (doom-docs--file-type default-directory))))))
-  (add-hook 'window-state-change-hook #'doom-docs--display-menu-h nil t))
+  (if doom-docs-view-mode
+      (add-hook 'window-state-change-hook #'doom-docs--display-menu-h nil 'local)
+    (remove-hook 'window-state-change-hook #'doom-docs--display-menu-h 'local)))
 
 
 ;;; ** Transformer functions

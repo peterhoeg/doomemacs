@@ -451,9 +451,7 @@ Returns PROP if specified, the context otherwise."
               (results (if src? (org-babel-where-is-src-block-result))))
          (save-excursion
            (when (and src?
-                      (if (stringp exports)
-                          (member exports '("results" "both"))
-                        org-export-use-babel)
+                      (member exports '("results" "both"))
                       (not results)
                       doom-docs-view-mode)
              (cl-pushnew beg doom-docs--block-cache :test #'=)

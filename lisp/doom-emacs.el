@@ -1747,7 +1747,7 @@ files, so this replace calls to `pp' with the much faster `prin1'."
 
 
 ;;;###package so-long
-(when (fboundp 'buffer-line-statistics)  ; only 29+
+(when (fboundp 'buffer-line-statistics)  ; only 28+
   (add-hook 'doom-first-file-hook #'global-so-long-mode)
   (with-eval-after-load 'so-long
     (unless (featurep 'native-compile)
@@ -1757,6 +1757,13 @@ files, so this replace calls to `pp' with the much faster `prin1'."
     ;;   activates if a file is too large or has lines whose width exceed
     ;;   `so-long-threshold' (particularly minified files), and disables
     ;;   non-essential functionality to speed Emacs up.
+    (defvar-local doom--so-long-fns nil)
+
+    (add-to-list 'so-long-action-alist
+                 (list #'doom-so-long-activate "Enable so-long-mode or so-long-minor-mode"
+                       (fn! (funcall (or (car doom--so-long-fns) #'ignore)))
+                       (fn! (funcall (or (cdr doom--so-long-fns) #'ignore)))))
+
     (defun doom-so-long-p ()
       "A `so-long-predicate' to determine if the current buffer is too large.
 
@@ -1769,15 +1776,19 @@ and whether the line count of the buffer exceeds that matching entry in
           (or (doom-temp-buffer-p (current-buffer))
               (doom-special-buffer-p (current-buffer) t))
         (let ((stats (buffer-line-statistics)))
-          (or (> (cadr stats) so-long-threshold)
-              (and buffer-file-name
-                   (when-let* ((maxlines
-                                (assoc-default buffer-file-name doom-file-lines-threshold-alist
-                                               #'string-match-p)))
-                     (> (car stats) maxlines)))))))
-    (setq so-long-predicate #'doom-so-long-p
-          so-long-function #'turn-on-so-long-minor-mode
-          so-long-revert-function #'turn-off-so-long-minor-mode)
+          (cond ((> (cadr stats) so-long-threshold)
+                 (setq doom--so-long-fns
+                       '(so-long-mode . so-long-mode-revert)))
+                ((and buffer-file-name
+                      (when-let* ((maxlines
+                                   (assoc-default buffer-file-name doom-file-lines-threshold-alist
+                                                  #'string-match-p)))
+                        (> (car stats) maxlines)))
+                 (setq doom--so-long-fns
+                       '(so-long-minor-mode . turn-off-so-long-minor-mode)))))))
+
+    (setq so-long-action 'doom-so-long-activate
+          so-long-predicate #'doom-so-long-p)
 
     (add-to-list 'so-long-target-modes 'conf-mode)
     (add-to-list 'so-long-target-modes 'text-mode)

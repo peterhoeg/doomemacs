@@ -665,7 +665,9 @@ This primes `org-mode' for reading."
                 org-display-remote-inline-images 'cache
                 ;; Don't highlight LaTeX in Doom docs. We won't need it and it
                 ;; interferes with shell command snippets that may contain a $.
-                org-highlight-latex-and-related nil)
+                org-highlight-latex-and-related nil
+                org-auto-align-tags t
+                org-tags-column -77)
 
     ;; HACK: Due to some backwards compatibility cludge in
     ;;   `org-set-regexps-and-options', it tries to read the default value of

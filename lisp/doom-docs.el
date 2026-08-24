@@ -317,28 +317,30 @@ Returns PROP if specified, the context otherwise."
 (defun doom-docs--open-header-link (ev)
   "Open the header link which is the target of the event EV."
   (interactive "e")
-  (let* ((string-and-pos (posn-string (event-start ev)))
-         (docs-buf (window-buffer (posn-window (event-start ev))))
-         (linkstr (concat "[[" (get-pos-property (cdr string-and-pos)
-                                                 'doom-docs-link
-                                                 (car string-and-pos))
-                          "]]")))
-    (with-temp-buffer
-      (with-silent-modifications
-        (setq buffer-file-name (buffer-file-name docs-buf))
-        (setq-local org-link-abbrev-alist-local
-                    (buffer-local-value 'org-link-abbrev-alist-local docs-buf))
-        (with-silent-modifications (insert linkstr))
-        (let ((org-inhibit-startup t))
-          (doom-docs-mode))
-        (goto-char (point-min))
-        (pcase (org-element-link-parser)
-          (`nil (user-error "No valid link in %S" link))
-          ((and link (guard (not (equal (org-element-end link) (1+ (length linkstr))))))
-           (user-error "Garbage after link in %S (%S)"
-                       linkstr (substring linkstr (1- (org-element-end link)))))
-          (link (org-link-open link)))
-        (org-show-subtree)))))
+  (with-delayed-gc!
+    (let* ((string-and-pos (posn-string (event-start ev)))
+           (window (posn-window (event-start ev)))
+           (buffer (window-buffer (posn-window (event-start ev))))
+           (linkstr (concat "[[" (get-pos-property (cdr string-and-pos)
+                                                   'doom-docs-link
+                                                   (car string-and-pos))
+                            "]]")))
+      (pcase (with-temp-buffer
+               (setq buffer-file-name (buffer-file-name buffer))
+               (with-silent-modifications
+                 (let ((org-inhibit-startup t)
+                       org-mode-hook
+                       doom-docs-mode-hook)
+                   (doom-docs-mode))
+                 (save-excursion (insert linkstr))
+                 (org-element-link-parser)))
+        (`nil (user-error "No valid link in %S" link))
+        ((and link (guard (not (equal (org-element-end link) (1+ (length linkstr))))))
+         (user-error "Garbage after link in %S (%S)"
+                     linkstr (substring linkstr (1- (org-element-end link)))))
+        (link (with-selected-window window
+                (org-link-open link)
+                (org-show-subtree)))))))
 
 (defvar doom-docs--type nil)
 (defun doom-docs--display-menu-h ()

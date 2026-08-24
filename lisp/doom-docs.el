@@ -1100,6 +1100,7 @@ This primes `org-mode' for reading."
                            (file-exists-p path))
                           'org-link
                         '(:inherit (error org-link) :underline nil))))
+      (org-link-set-parameters "elisp" :face 'link-visited)
 
       (org-link-set-parameters
        "var"

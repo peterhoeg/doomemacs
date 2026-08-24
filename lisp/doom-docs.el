@@ -1285,7 +1285,7 @@ documentation.
                 (when (memq (get-char-property (line-end-position) 'invisible)
                             '(outline org-fold-outline))
                   (org-show-hidden-entry)))))
-        (doom-project-browse dir)))))
+        (doom-project-browse (file-name-as-directory dir))))))
 
 ;;;###autoload
 (defun doom/docs-news (&optional interactive?)

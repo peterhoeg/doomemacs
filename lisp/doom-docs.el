@@ -838,13 +838,14 @@ This primes `org-mode' for reading."
 
 ;;; ** M-x:*
 
-(defun doom-docs-link--M-x-activate-func (beg end target _)
+(defun doom-docs-link--M-x-activate-func (beg end target bracketed?)
   (when org-descriptive-links
     (let ((context (org-element-context (org-element-at-point-no-context beg))))
       (unless (doom-docs--get-link-description context t)
-        (add-text-properties
-         (+ beg 2 3) (+ beg 2 4)
-         '(display " "))))))
+        (let ((offset (if bracketed? 2 0)))
+          (add-text-properties
+           (+ beg offset 3) (+ beg offset 4)
+           '(display " ")))))))
 
 
 ;;; ** repo:*

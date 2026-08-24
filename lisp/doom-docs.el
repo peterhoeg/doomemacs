@@ -662,6 +662,7 @@ This primes `org-mode' for reading."
                 org-startup-indented t
                 org-startup-with-inline-images t
                 org-startup-folded 'show3levels
+                org-hide-block-startup nil
                 org-display-remote-inline-images 'cache
                 ;; Don't highlight LaTeX in Doom docs. We won't need it and it
                 ;; interferes with shell command snippets that may contain a $.

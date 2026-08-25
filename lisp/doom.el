@@ -42,6 +42,7 @@
 ;;       - hook: `doom-before-init-hook'
 ;;       - $EMACSDIR/lisp/doom-emacs.el
 ;;       - $DOOMDIR/init.el
+;;   - $EMACSDIR/user-lisp/.user-lisp-autoloads.el  (see `user-lisp-directory')
 ;;   - hook: `before-init-hook'
 ;;   > $XDG_DATA_HOME/doom/$PROFILE/@/$VERSION/init.el   (replaces $EMACSDIR/init.el)
 ;;     - $EMACSDIR/doom-{keybinds,ui,projects,editor}.el

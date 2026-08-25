@@ -337,7 +337,8 @@ Returns PROP if specified, the context otherwise."
                      linkstr (substring linkstr (1- (org-element-end link)))))
         (link (with-selected-window window
                 (org-link-open link)
-                (org-show-subtree)))))))
+                (org-show-entry)
+                (org-show-children)))))))
 
 (defvar doom-docs--type nil)
 (defun doom-docs--display-menu-h ()
@@ -954,7 +955,7 @@ This primes `org-mode' for reading."
                                             (substring (symbol-name flag) 1))
                                     (save-excursion (org-get-next-sibling)
                                                     (point))))
-        (org-show-entry)
+        (org-show-subtree)
         (recenter)))))
 
 
@@ -1394,7 +1395,8 @@ documentation.
       (when pos
         (goto-char pos)
         (when (doom-docs--invisible-p (point))
-          (org-show-subtree))))))
+          (org-show-entry)
+          (org-show-children))))))
 
 (provide 'doom-docs)
 ;;; doom-docs.el ends here

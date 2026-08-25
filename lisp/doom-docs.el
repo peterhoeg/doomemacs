@@ -1302,12 +1302,6 @@ documentation.
              interactive?))
 
 ;;;###autoload
-(defun doom/docs-faq (&optional interactive?)
-  "Visit Doom's project FAQ."
-  (interactive '(interactive))
-  (doom/docs (doom-path doom-docs-dir "faq.org") interactive?))
-
-;;;###autoload
 (defun doom/docs-search (&optional initial-input)
   "Perform a text search on all of Doom's documentation"
   (interactive)

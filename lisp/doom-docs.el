@@ -1011,6 +1011,13 @@ This primes `org-mode' for reading."
     (propertize "<No appendix definition for %S>" 'face 'warning)))
 
 
+;;; ** filter:*
+
+(defun doom-docs-link--filter-follow (match)
+  (and (org-tags-sparse-tree nil match)
+       (message "Filtered to: %s" target)))
+
+
 ;;; ** Link abbrevs
 
 (defun doom-docs--link-help (_link)
@@ -1108,6 +1115,11 @@ This primes `org-mode' for reading."
                           'org-link
                         '(:inherit (error org-link) :underline nil))))
       (org-link-set-parameters "elisp" :face 'link-visited)
+      (org-link-set-parameters
+       "filter"
+       :follow #'doom-docs-link--filter-follow
+       :activate-func #'doom-docs-link-activate-func
+       :face 'link-visited)
 
       (org-link-set-parameters
        "var"

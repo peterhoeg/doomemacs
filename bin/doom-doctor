@@ -59,7 +59,7 @@ in."
     (when (or (> emacs-major-version 30)
               (string-match-p ".\\([56]0\\|9[0-9]\\)$" emacs-version))
       (warn! "Detected a development build of Emacs (%s)" emacs-version)
-      (if (> emacs-major-version 30)
+      (if (> emacs-major-version 31)
           (explain! "This is the bleeding edge of Emacs and is inherently unstable.\n")
         (explain! "A version that ends in .50, .60, or .9X indicates a pre-release build of Emacs "
                   "in between stable releases. Doom does not officially support them.\n"))

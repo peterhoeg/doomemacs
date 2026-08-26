@@ -52,6 +52,13 @@
     ("doom-root"    . doom-docs--link-root)
     ("doom-up"      . doom-docs--link-up)
 
+    ("doom-home" . "https://doomemacs.org/")
+    ("doom-wiki" . "https://wiki.doomemacs.org/")
+    ("doom-docs" . "https://docs.doomemacs.org/")
+    ("doom-git" . "https://git.doomemacs.org/")
+    ("doom-discuss" . "https://discuss.doomemacs.org/")
+    ("doom-discord" . "https://discord.doomemacs.org/")
+
     ("doom-contrib-edit"       . "id:31f5a61d-d505-4ee8-9adb-97678250f4e2")
     ("doom-contrib-faq"        . "id:aa28b732-0512-49ed-a47b-f20586c0f051")
     ("doom-contrib-core"       . "id:9ac0c15c-29e7-43f8-8926-5f0edb1098f0")

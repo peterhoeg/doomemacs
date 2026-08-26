@@ -245,8 +245,7 @@ the value of the last one, or nil if there are none."
                      (setq message (pop args)))
                  2)))
     `(when (and (not doom-inhibit-log)
-                (or (not noninteractive)
-                    (<= ,level doom-log-level)))
+                (<= ,level doom-log-level))
        (doom--log ,level ,message ,@args))))
 
 

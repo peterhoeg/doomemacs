@@ -222,8 +222,9 @@ the value of the last one, or nil if there are none."
                            (> level doom-log-level)))
         (absolute? (string-prefix-p ":" text)))
     (apply #'message
-           (propertize (concat "* %.06f:%s" (if (not absolute?) ":") text)
+           (propertize (concat "* %d:%.06f:%s" (if (not absolute?) ":") text)
                        'face 'font-lock-doc-face)
+           level
            (float-time (time-subtract (current-time) before-init-time))
            (mapconcat
             (lambda (x) (format "%s" x))
@@ -398,7 +399,7 @@ Can also load Doom's subfeatures, e.g. (doom-require \\='doom-lib \\='files)"
 (defun doom-run-hook (hook)
   "Run HOOK (a hook function) with better error handling.
 Meant to be used with `run-hook-wrapped'."
-  (doom-log 3 "hook:%s: run %s" (or doom--hook '*) hook)
+  (doom-log 3 "hook:%s: run %S in %S" (or doom--hook '*) hook (current-buffer))
   (condition-case-unless-debug e
       (funcall hook)
     (error

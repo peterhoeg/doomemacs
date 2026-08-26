@@ -1007,7 +1007,7 @@ This primes `org-mode' for reading."
 (defun doom-docs-link--abbr-help-desc (target)
   (doom-docs--abbr-populate)
   (if-let* ((def (gethash (downcase target) doom-docs--abbr-cache)))
-      (car def)
+      (replace-regexp-in-string org-link-any-re "\\3" (car def))
     (propertize "<No appendix definition for %S>" 'face 'warning)))
 
 

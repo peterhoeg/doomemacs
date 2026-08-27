@@ -295,11 +295,6 @@ Otherwise, `en/disable-command' (in novice.el.gz) is hardcoded to write them to
 ;;
 ;;; * Global defaults
 
-;; Background native compilation consumes several CPU cores and takes minutes to
-;; complete. Not worth the extra stress when on battery power.
-(setq native-comp-async-on-battery-power nil)  ; introduced in Emacs 31.1
-
-
 ;;; ** Stricter security defaults
 
 ;; Emacs is essentially one huge security vulnerability, what with all the

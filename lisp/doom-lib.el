@@ -1118,9 +1118,10 @@ to reverse this and trigger `after!' blocks at a more reasonable time."
          ;; code, which would prematurely trigger this. In those cases, well
          ;; behaved plugins will use `delay-mode-hooks', which we can check for:
          (unless delay-mode-hooks
-           ;; ...Otherwise, announce to the world this package has been loaded,
-           ;; so `after!' handlers can react.
-           (provide ',feature)
+           (unless (featurep ',feature)
+             ;; ...Otherwise, announce to the world this package has been
+             ;; loaded, so `after!' handlers can react.
+             (provide ',feature))
            (dolist (fn ',fns)
              (advice-remove fn #',advice-fn)))))))
 

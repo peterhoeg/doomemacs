@@ -776,11 +776,12 @@ This primes `org-mode' for reading."
     (let* ((context (org-element-context (org-element-at-point-no-context beg)))
            (desc (doom-docs--get-link-description context t)))
       (when-let* ((link (or (if (string-empty-p target) desc) target)))
-        (when buffer-read-only
-          (when-let* ((type (org-element-property :type context))
-                      (icon (org-link-get-parameter type :activate-icon))
-                      (icon (if (functionp icon) (funcall icon link) icon)))
-            (add-text-properties beg (1+ beg) `(display ,(concat icon " ")))))
+        (if-let* ((buffer-read-only)
+                  (type (org-element-property :type context))
+                  (icon (org-link-get-parameter type :activate-icon))
+                  (icon (if (functionp icon) (funcall icon link) icon)))
+            (add-text-properties beg (1+ beg) `(display ,(concat icon " ")))
+          (remove-text-properties beg (1+ beg) '(display t)))
         (unless desc
           (let ((offset (if bracket? 2 0))
                 tagend)
@@ -820,20 +821,25 @@ This primes `org-mode' for reading."
           (replace-regexp-in-string (car key) (cdr key)
                                     keystr t t))))
 
-(defun doom-docs-link--kbd-activate (beg end key _)
-  (when buffer-read-only
-    (let* ((context (doom-docs-context-at-pos beg))
-           (key (doom-docs--get-link-description context))
-           (keystr (doom-docs-link--kbd key))
+(defun doom-docs-link--kbd-activate-func (beg end key _bracketed?)
+  (if (not org-descriptive-links)
+      (remove-text-properties beg end '(display nil))
+    (let* ((keystr (doom-docs-link--kbd key))
            (total (max 0 (- (string-width key)
-                            (string-width keystr)))))
+                            (string-width keystr))))
+           (keybeg (save-excursion
+                     (goto-char beg)
+                     (skip-chars-forward "^:" end)
+                     (1+ (point)))))
+      ;; Hide kbd:
       (add-text-properties
-       (if (string-empty-p (org-element-property :path context))
-           beg
-         (+ beg 3 (string-width (org-element-property :type context))))
-       end `(display
-             ,(propertize (concat keystr (make-string total ?\s))
-                          'face 'doom-docs-kbd))))))
+       beg keybeg `(invisible t intangible t cursor-intangible t))
+      ;; Resolve keybinds in str:
+      (when buffer-read-only
+        (add-text-properties
+         beg end `(display
+                   ,(propertize (concat keystr (make-string total ?\s))
+                                'face 'doom-docs-kbd)))))))
 
 (defun doom-docs-link--kbd-help-echo (window object pos)
   (with-selected-window window
@@ -846,14 +852,16 @@ This primes `org-mode' for reading."
 
 ;;; ** M-x:*
 
-(defun doom-docs-link--M-x-activate-func (beg end target bracketed?)
-  (when org-descriptive-links
-    (let ((context (org-element-context (org-element-at-point-no-context beg))))
-      (unless (doom-docs--get-link-description context t)
-        (let ((offset (if bracketed? 2 0)))
-          (add-text-properties
-           (+ beg offset 3) (+ beg offset 4)
-           '(display " ")))))))
+(defun doom-docs-link--M-x-activate-func (beg end _target _bracketed?)
+  (let ((pt (save-excursion (goto-char beg)
+                            (skip-chars-forward "^:" end)
+                            (point))))
+    (if (or (not org-descriptive-links)
+            (doom-docs--get-link-description
+             (org-element-context (org-element-at-point-no-context beg))
+             t))
+        (remove-text-properties pt (1+ pt) '(display nil))
+      (add-text-properties pt (1+ pt) '(display " ")))))
 
 
 ;;; ** repo:*
@@ -1173,7 +1181,7 @@ This primes `org-mode' for reading."
       (org-link-set-parameters
        "kbd"
        :face 'doom-docs-kbd
-       :activate-func #'doom-docs-link--kbd-activate
+       :activate-func #'doom-docs-link--kbd-activate-func
        :help-echo #'doom-docs-link--kbd-help-echo)
       (org-link-set-parameters
        "repo"

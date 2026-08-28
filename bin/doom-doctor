@@ -56,7 +56,7 @@ in."
 
   (print! (start "Checking your Emacs version..."))
   (print-group!
-    (when (or (> emacs-major-version 30)
+    (when (or (> emacs-major-version 31)
               (string-match-p ".\\([56]0\\|9[0-9]\\)$" emacs-version))
       (warn! "Detected a development build of Emacs (%s)" emacs-version)
       (if (> emacs-major-version 31)

@@ -812,7 +812,9 @@ This primes `org-mode' for reading."
                                   "C-u"))
                  ("<help>" . "C-h")
                  ,@(when user-friendly?
-                     '(("\\<M-" . "Meta-")
+                     '(("RET" . "Return")
+                       ("SPC" . "Space")
+                       ("\\<M-" . "Meta-")
                        ("\\<S-" . "Shift-")
                        ("\\<s-" . "super-")
                        ("\\<C-" . "Ctrl-"))))
@@ -820,6 +822,11 @@ This primes `org-mode' for reading."
     (setq keystr
           (replace-regexp-in-string (car key) (cdr key)
                                     keystr t t))))
+
+(defun doom-docs-link--kbd-follow (key)
+  (message "%s %s"
+           (propertize "Key sequence:" 'face 'bold)
+           (doom-docs-link--kbd key t)))
 
 (defun doom-docs-link--kbd-activate-func (beg end key _bracketed?)
   (if (not org-descriptive-links)
@@ -1180,6 +1187,7 @@ This primes `org-mode' for reading."
        :help-desc (fn! (function-documentation (intern-soft %))))
       (org-link-set-parameters
        "kbd"
+       :follow #'doom-docs-link--kbd-follow
        :face 'doom-docs-kbd
        :activate-func #'doom-docs-link--kbd-activate-func
        :help-echo #'doom-docs-link--kbd-help-echo)

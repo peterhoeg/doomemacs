@@ -81,6 +81,9 @@
 
 Falls back to unicode icons, where specified, omitting icons otherwise.")
 
+(defvar doom-docs-enable-view-mode t
+  "If non-nil, activate `doom-docs-view-mode' when entering `doom-docs-mode'.")
+
 (defvar doom-docs--id-locations nil)
 (defvar doom-docs--id-files nil)
 (defvar doom-docs--id-location-file (doom-profile-cache-dir t "doom-docs-org-ids"))
@@ -728,21 +731,16 @@ This primes `org-mode' for reading."
       ;; docs with read-only mode off don't need to be pretty.
       (when (bound-and-true-p org-modern-mode)
         (org-modern-mode -1))
-      (doom-docs--locations-load nil (list (current-buffer))))))
-
-;;;###autoload
-(defun doom-docs-view-mode-h ()
-  "Activate `read-only-mode' if the current file exists and is non-empty."
-  ;; The rationale: if it's empty or non-existant, you want to write an org
-  ;; file, not read it.
-  (let ((file-name (buffer-file-name (buffer-base-buffer))))
-    (when (and file-name
-               (> (buffer-size) 0)
-               (not (string-prefix-p "." (file-name-base file-name)))
-               (file-exists-p file-name))
-      (doom-docs-view-mode +1))))
-
-(add-hook 'doom-docs-mode-hook #'doom-docs-view-mode-h)
+      (doom-docs--locations-load nil (list (current-buffer)))
+      (when doom-docs-enable-view-mode
+        (let ((file-name (buffer-file-name (buffer-base-buffer))))
+          ;; The rationale: if it's empty or non-existant, you want to write an
+          ;; org file, not read it.
+          (when (and file-name
+                     (> (buffer-size) 0)
+                     (not (string-prefix-p "." (file-name-base file-name)))
+                     (file-exists-p file-name))
+            (doom-docs-view-mode +1)))))))
 
 
 ;;

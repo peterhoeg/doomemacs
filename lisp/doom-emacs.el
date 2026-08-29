@@ -1647,7 +1647,10 @@ with `set-indent-vars!'."
 
   ;; PERF: Text properties inflate the size of recentf's files, and there is no
   ;;   reason to persist them (must be first in `recentf-filename-handlers'!)
-  (add-to-list 'recentf-filename-handlers #'substring-no-properties)
+  ;; DEPRECATED: Remove when 30.x support is dropped
+  ;;   (see emacs-mirror/emacs@6b901a8e8598)
+  (when (< emacs-major-version 31)
+    (add-to-list 'recentf-filename-handlers #'substring-no-properties))
 
   ;; UX: Reorder the recent files list by frecency (i.e. every time you touch a
   ;;   buffer, bump it to the top of the list).

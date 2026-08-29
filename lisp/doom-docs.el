@@ -1287,6 +1287,12 @@ If the prefix arg is set, open docs.doomemacs.org instead.
                        "Loading Doom manual..."))
 
 ;;;###autoload
+(defun doom/docs-find-file (&optional file)
+  "Browse `doom-docs-dir'."
+  (interactive (list (read-file-name "Find docs file: " doom-docs-dir "index.org" t)))
+  (doom-docs-find-file file "Loading Doom docs file..."))
+
+;;;###autoload
 (defun doom/docs-module (key &optional visit-dir?)
   "Open the documentation for a Doom module by KEY.
 

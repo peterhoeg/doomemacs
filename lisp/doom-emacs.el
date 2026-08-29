@@ -1008,7 +1008,9 @@ If this is a daemon session, load them all immediately instead."
 
 (defun doom-run-switch-buffer-hooks-h (&optional _)
   "Trigger `doom-switch-buffer-hook' when selecting a new buffer."
-  (with-delayed-gc! (run-hooks 'doom-switch-buffer-hook)))
+  (unless (or (minibufferp)
+              (eq (window-old-buffer) (current-buffer)))
+    (with-delayed-gc! (run-hooks 'doom-switch-buffer-hook))))
 
 (defun doom-run-switch-window-hooks-h (&optional _)
   "Trigger `doom-switch-window-hook' when selecting a window in the same frame."

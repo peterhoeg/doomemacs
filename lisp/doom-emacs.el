@@ -1689,15 +1689,16 @@ with `set-indent-vars!'."
           search-ring regexp-search-ring)) ; persist searches
   (add-hook! 'savehist-save-hook
     (defun doom-savehist-unpropertize-variables-h ()
-      "Remove text properties from `kill-ring' to reduce savehist cache size."
-      (setq kill-ring
-            (mapcar #'substring-no-properties
-                    (cl-remove-if-not #'stringp kill-ring))
-            register-alist
-            (cl-loop for (reg . item) in register-alist
-                     if (stringp item)
-                     collect (cons reg (substring-no-properties item))
-                     else collect (cons reg item))))
+      "Strip text properties from vars to reduce size and serialization errors."
+      (letf! (defun* strip-properties (tree)
+               (cond ((stringp tree) (substring-no-properties tree))
+                     ((consp tree) (cons (strip-properties (car tree))
+                                         (strip-properties (cdr tree))))
+                     (tree)))
+        (dolist (var (append savehist-additional-variables
+                             savehist-minibuffer-history-variables))
+          (when (boundp var)
+            (set var (strip-properties (symbol-value var)))))))
     (defun doom-savehist-remove-unprintable-registers-h ()
       "Remove unwriteable registers (e.g. containing window configurations).
 Otherwise, `savehist' would discard `register-alist' entirely if we don't omit

@@ -1654,13 +1654,7 @@ with `set-indent-vars!'."
 
   ;; UX: Reorder the recent files list by frecency (i.e. every time you touch a
   ;;   buffer, bump it to the top of the list).
-  (add-hook! '(doom-switch-window-hook write-file-functions)
-    (defun doom--recentf-touch-buffer-h ()
-      "Bump file in recent file list when it is switched or written to."
-      (when buffer-file-name
-        (recentf-add-file buffer-file-name))
-      ;; Return nil for `write-file-functions'
-      nil))
+  (add-hook 'doom-switch-window-hook #'recentf-track-opened-file)
   (add-hook! 'dired-mode-hook
     (defun doom--recentf-add-dired-directory-h ()
       "Add dired directories to recentf file list."

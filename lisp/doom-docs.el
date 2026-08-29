@@ -1276,17 +1276,15 @@ If FORCE? is non-nil, do it even if they're already loaded."
   (doom-docs--abbr-populate force?))
 
 ;;;###autoload
-(defun doom/docs (&optional file interactive?)
+(defun doom/docs (&optional file)
   "View Doom's documentation FILE.
 
 If the prefix arg is set, open docs.doomemacs.org instead.
 
-\(fn &optional FILE INTERACTIVE?)"
-  (interactive '(nil interactive))
-  (if current-prefix-arg
-      (browse-url "https://docs.doomemacs.org")
-    (doom-docs-find-file (or file (doom-path doom-docs-dir "index.org"))
-                         (if interactive? "Loading Doom manual..."))))
+\(fn &optional FILE)"
+  (interactive)
+  (doom-docs-find-file (or file (doom-path doom-docs-dir "index.org"))
+                       "Loading Doom manual..."))
 
 ;;;###autoload
 (defun doom/docs-module (key &optional visit-dir?)

@@ -654,7 +654,7 @@ The def* forms accepted are:
   (setq body (macroexp-progn body))
   (when (memq (car bindings) '(defun defun* defun! defmacro defadvice))
     (setq bindings (list bindings)))
-  (dolist (binding (nreverse bindings) body)
+  (dolist (binding (reverse bindings) body)
     (setq
      body (pcase binding
             (`(defmacro . ,rest) `(cl-macrolet (,rest) ,body))

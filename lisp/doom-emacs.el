@@ -1654,7 +1654,8 @@ with `set-indent-vars!'."
 
   ;; UX: Reorder the recent files list by frecency (i.e. every time you touch a
   ;;   buffer, bump it to the top of the list).
-  (add-hook 'doom-switch-window-hook #'recentf-track-opened-file)
+  (add-hook! '(doom-switch-buffer-hook doom-switch-window-hook)
+             #'recentf-track-opened-file)
   (add-hook! 'dired-mode-hook
     (defun doom--recentf-add-dired-directory-h ()
       "Add dired directories to recentf file list."

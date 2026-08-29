@@ -1731,12 +1731,14 @@ the unwritable tidbits."
     :before-while #'save-place-find-file-hook
     (bobp))
 
-  (defadvice! doom--dont-prettify-saveplace-cache-a (fn)
-    "`save-place-alist-to-file' uses `pp' to prettify the contents of its cache.
+  ;;; DEPRECATED: Drop with 30.x support (emacs-mirror/emacs@c270402).
+  (when (< emacs-major-version 31)
+    (defadvice! doom--dont-prettify-saveplace-cache-a (fn)
+      "`save-place-alist-to-file' uses `pp' to prettify the contents of its cache.
 `pp' can be expensive for longer lists, and there's no reason to prettify cache
 files, so this replace calls to `pp' with the much faster `prin1'."
-    :around #'save-place-alist-to-file
-    (letf! ((#'pp #'prin1)) (funcall fn))))
+      :around #'save-place-alist-to-file
+      (letf! ((#'pp #'prin1)) (funcall fn)))))
 
 
 ;;;###package so-long

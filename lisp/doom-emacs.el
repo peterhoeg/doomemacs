@@ -1695,8 +1695,15 @@ with `set-indent-vars!'."
       "Strip text properties from vars to reduce size and serialization errors."
       (letf! (defun* strip-properties (tree)
                (cond ((stringp tree) (substring-no-properties tree))
-                     ((consp tree) (cons (strip-properties (car tree))
-                                         (strip-properties (cdr tree))))
+                     ((consp tree)
+                      (let* ((head (cons nil nil))
+                             (tail head))
+                        (while (consp tree)
+                          (setcdr tail (list (strip-properties (car tree))))
+                          (setq tail (cdr tail)
+                                tree (cdr tree)))
+                        (if tree (setcdr tail tree))  ; preserve dotted tails
+                        (cdr head)))
                      (tree)))
         (dolist (var (append savehist-additional-variables
                              savehist-minibuffer-history-variables))

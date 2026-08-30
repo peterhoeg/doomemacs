@@ -251,15 +251,7 @@
       (unless (eq system-type 'darwin)
         (setq command-line-ns-option-alist nil))
       (unless (memq initial-window-system '(x pgtk))
-        (setq command-line-x-option-alist nil))
-
-      ;; PERF: `setopt' can eagerly load symbol dependencies to preform immediate
-      ;;   type checking, which can cause unexpected load order issues and impact
-      ;;   startup time drastically. Type checks are already performed when the
-      ;;   variable is defined, anyway, so this advice prevents early loading.
-      (define-advice setopt--set (:around (fn &rest args) inhibit-load-symbol -90)
-        (let ((custom-load-recursion t))
-          (apply fn args))))))
+        (setq command-line-x-option-alist nil)))))
 
 
 ;; PERF: Many elisp file API calls consult `file-name-handler-alist' (like

@@ -198,8 +198,8 @@
         (define-advice tty-run-terminal-initialization (:override (&rest _) defer)
           (advice-remove #'tty-run-terminal-initialization #'tty-run-terminal-initialization@defer)
           (add-hook 'window-setup-hook
-                    (doom-partial #'tty-run-terminal-initialization
-                                  (selected-frame) nil t))))
+                    (apply-partially #'tty-run-terminal-initialization
+                                     (selected-frame) nil t))))
 
       ;; These optimizations make impede debugging other issues, so bow out when
       ;; debug mode is on.

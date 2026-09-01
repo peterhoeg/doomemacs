@@ -1557,8 +1557,10 @@ with `set-indent-vars!'."
                            cursor-face-highlight-mode
                            (doom-temp-buffer-p b)
                            (minibufferp)))))
-              ;; Don't display line highlights in non-focused windows, for
-              ;; performance sake and to reduce UI clutter.
+              ;; Per-window line highlights is more performant than other
+              ;; settings for `global-hl-line-sticky-flag', because it uses
+              ;; `pre-redisplay-functions' and per-window overlays instead of
+              ;; `post-command-hook' and per-buffer overlays.
               global-hl-line-sticky-flag 'window)
       ;; HACK: `global-hl-line-buffers' wasn't introduced until 31.1, so I
       ;;   reimplement it for `global-hl-line-modes', so we have a major mode

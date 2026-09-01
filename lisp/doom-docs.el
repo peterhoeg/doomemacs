@@ -736,6 +736,13 @@ This primes `org-mode' for reading."
       ;; docs with read-only mode off don't need to be pretty.
       (when (bound-and-true-p org-modern-mode)
         (org-modern-mode -1))
+      (when (bound-and-true-p spell-fu-faces-exclude)
+        (setq-local spell-fu-faces-exclude
+                    (append spell-fu-faces-exclude
+                            '(doom-docs-shell-command doom-docs-variable
+                              doom-docs-function doom-docs-face
+                              doom-docs-command doom-docs-kbd doom-docs-repo
+                              doom-docs-package doom-docs-module))))
       (doom-docs--locations-load nil (list (current-buffer)))
       (when doom-docs-enable-view-mode
         (let ((file-name (buffer-file-name (buffer-base-buffer))))

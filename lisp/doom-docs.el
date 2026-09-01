@@ -150,6 +150,11 @@ Falls back to unicode icons, where specified, omitting icons otherwise.")
   "Face used for links to enabled Doom modules in `doom-docs-mode'."
   :group 'doom)
 
+(defface doom-docs-shell-command
+  '((t :inherit (org-code org-block fixed-pitch) :weight bold))
+  "Face used to highlight shell commands in `doom-docs-mode'."
+  :group 'doom)
+
 (defface doom-docs-abbr
   '((((background light)) :underline (:line-width 1 :color "grey65"))
     (((background dark))  :underline (:line-width 1 :color "grey35")))
@@ -1140,6 +1145,11 @@ This primes `org-mode' for reading."
        :follow #'doom-docs-link--filter-follow
        :activate-func #'doom-docs-link-activate-func
        :face 'link-visited)
+
+      (org-link-set-parameters
+       "sh"
+       :activate-func #'doom-docs-link-activate-func
+       :face 'doom-docs-shell-command)
 
       (org-link-set-parameters
        "var"

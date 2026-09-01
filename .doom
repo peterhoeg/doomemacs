@@ -1,5 +1,5 @@
 ;; -*- mode: lisp-data -*-
-"2.2.3"
+"2.2.4"
 ((name . doomemacs/core)
  (version . ,(doom-version))
  (homepage . "https://doomemacs.org")

@@ -97,69 +97,54 @@ Falls back to unicode icons, where specified, omitting icons otherwise.")
 (defface doom-docs-header-link
   '((((background light)) :foreground "black" :weight bold)
     (((background dark))  :foreground "white" :weight bold))
-  "Face used for buttons in the header line."
-  :group 'doom)
+  "Face used for buttons in the header line.")
 
 (defface doom-docs-link '((t :inherit org-link :underline nil))
-  "Face used for doom:* links."
-  :group 'doom)
+  "Face used for doom:* links.")
 
 (defface doom-docs-title '((t :inherit org-document-title :weight bold :height 1.4))
-  "Face used for #+TITLEs in `doom-docs-view-mode'."
-  :group 'doom)
+  "Face used for #+TITLEs in `doom-docs-view-mode'.")
 
 (defface doom-docs-info '((t :inherit org-document-info :weight normal :height 1.15))
-  "Face used for #+SUBTITLE, #+DATE, #+AUTHOR, #+EMAIL in `doom-docs-view-mode'."
-  :group 'doom)
+  "Face used for #+SUBTITLE, #+DATE, #+AUTHOR, #+EMAIL in `doom-docs-view-mode'.")
 
 (defface doom-docs-symbol
   '((t :inherit font-lock-keyword-face
        :box (:line-width (-1 . -1) :color "grey35")))
-  "Face used for all symbol links (var, func, cmd, face) in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for all symbol links (var, func, cmd, face) in `doom-docs-mode'.")
 
 (defface doom-docs-variable '((t :inherit doom-docs-symbol))
-  "Face used for links to elisp variables in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to elisp variables in `doom-docs-mode'.")
 
 (defface doom-docs-function '((t :inherit doom-docs-symbol))
-  "Face used for links to elisp functions in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to elisp functions in `doom-docs-mode'.")
 
 (defface doom-docs-face '((t :inherit doom-docs-symbol))
-  "Face used for links to elisp face symbols in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to elisp face symbols in `doom-docs-mode'.")
 
 (defface doom-docs-command '((t :inherit doom-docs-symbol))
-  "Face used for links to interactive elisp commands in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to interactive elisp commands in `doom-docs-mode'.")
 
 (defface doom-docs-kbd '((t :inherit help-key-binding))
-  "Face used for links to Emacs key sequences in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to Emacs key sequences in `doom-docs-mode'.")
 
 (defface doom-docs-repo '((t :inherit doom-docs-link :weight bold))
-  "Face used for repo: links in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for repo: links in `doom-docs-mode'.")
 
 (defface doom-docs-package '((t :inherit package-name :weight bold :underline nil))
-  "Face used for links to Emacs packages in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to Emacs packages in `doom-docs-mode'.")
 
 (defface doom-docs-module '((t :inherit doom-docs-header-link :weight bold :underline nil))
-  "Face used for links to enabled Doom modules in `doom-docs-mode'."
-  :group 'doom)
+  "Face used for links to enabled Doom modules in `doom-docs-mode'.")
 
 (defface doom-docs-shell-command
   '((t :inherit (org-code org-block fixed-pitch) :weight bold))
-  "Face used to highlight shell commands in `doom-docs-mode'."
-  :group 'doom)
+  "Face used to highlight shell commands in `doom-docs-mode'.")
 
 (defface doom-docs-abbr
   '((((background light)) :underline (:line-width 1 :color "grey65"))
     (((background dark))  :underline (:line-width 1 :color "grey35")))
-  "Face used for abbreviations and definition lookup links."
-  :group 'doom)
+  "Face used for abbreviations and definition lookup links.")
 
 
 ;;

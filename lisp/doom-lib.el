@@ -1005,7 +1005,7 @@ incompatibilities in the alist format.
                              (if f
                                  (signal 'doom-core-error
                                          `(config missing-version ,path))
-                               (setq v doom-version)))
+                               (setq v (doom-version))))
                            (cons
                             v (doom-config--normalize
                                type v (if (listp f) (eval `(backquote ,f) t)))))

@@ -147,9 +147,6 @@ The first element should always be one of `macos', `windows', `linux', or
   :link '(url-link :tag "Website" "https://doomemacs.org")
   :group 'emacs)
 
-(defconst doom-version "2.2.3"
-  "Current version of Doom Emacs core.")
-
 (defvar doom-init-time nil
   "The time it took, in seconds (as a float), for Doom Emacs to start up.")
 
@@ -340,6 +337,16 @@ Each function is passed one argument: the doom-profile being started up."
 
 ;;
 ;;; * Initializers
+
+(defun doom-version ()
+  "Return the running version of Doom core."
+  (declare (side-effect-free t))
+  (or (get 'doom 'version)
+      (put 'doom 'version
+           (with-temp-buffer
+             (insert-file-contents (file-name-concat doom-emacs-dir ".doom")
+                                   nil 0 96)
+             (read (current-buffer))))))
 
 (defun doom-initialize (profile-id &optional interactive?)
   "Bootstrap the Doom session ahead."

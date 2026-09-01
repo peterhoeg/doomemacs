@@ -1336,7 +1336,7 @@ documentation.
   (interactive '(interactive))
   (doom/docs (read-file-name
               "Select version: " (doom-path doom-docs-dir "news/")
-              (apply #'format "v%d.%d.org" (seq-take (version-to-list doom-version) 2))
+              (apply #'format "v%d.%d.org" (seq-take (version-to-list (doom-version)) 2))
               t)
              interactive?))
 

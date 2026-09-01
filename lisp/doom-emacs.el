@@ -119,12 +119,13 @@ Hide the mode line if it is shown, and show it if it's hidden."
 (defcustom doom-theme nil
   "What theme (or themes) to load at startup.
 
-Is either a symbol representing the name of an Emacs theme, or a list thereof
-(to enable in order).
+Is either a symbol representing the name of an Emacs theme, or a cons cell in
+the format of (DARK-THEME . LIGHT-THEME). At startup, Doom tries to determine if
+the system is in dark mode (see `doom--dark-mode-p' for its methods).
 
 Set to `nil' to load no theme at all. This variable is changed by `load-theme'
 and `enable-theme'."
-  :type '(choice symbol (repeat symbol))
+  :type '(choice symbol (cons symbol symbol))
   :group 'doom)
 
 (defcustom doom-font nil
@@ -1166,9 +1167,41 @@ windows, switch to `doom-fallback-buffer'. Otherwise, delegate to original
     (run-hooks 'after-setting-font-hook))
   (put 'doom-font 'initialized t))
 
+(defun doom--dark-mode-p ()
+  "Return non-nil if the OS is in dark-mode."
+  (cond ((featurep :system 'macos)
+         (if (boundp 'ns-system-appearance)
+             (eq ns-system-appearance 'dark)
+           (let ((cmd "tell app \"System Events\" to tell appearance preferences to return dark mode"))
+             (string-equal
+              "true"
+              (or (if (fboundp #'ns-do-applescript)  (ns-do-applescript cmd))
+                  (if (fboundp #'mac-do-applescript) (mac-do-applescript cmd))
+                  (string-trim (shell-command-to-string
+                                (format "osascript -e '%s'" cmd))))))))
+        ((fboundp 'w32-read-registry)
+         (eq 0 (w32-read-registry
+                'HKCU
+                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"
+                "AppsUseLightTheme")))
+        ((and (featurep :system 'linux)
+              (require 'dbus nil t))
+         (eq 1 (car-safe (flatten-list
+                          (dbus-call-method
+                           :session "org.freedesktop.portal.Desktop"
+                           "/org/freedesktop/portal/desktop"
+                           "org.freedesktop.portal.Settings" "Read"
+                           "org.freedesktop.appearance" "color-scheme")))))
+        ((doom-log 1 "Failed to determine if system is in dark mode")
+         nil)))
+
 (defun doom-init-theme-h (&rest _)
   "Load the theme specified by `doom-theme' in FRAME."
-  (dolist (th (ensure-list doom-theme))
+  (when-let* ((th (if (consp doom-theme)
+                      (if (doom--dark-mode-p)
+                          (car doom-theme)
+                        (cdr doom-theme))
+                    doom-theme)))
     (unless (custom-theme-enabled-p th)
       (if (custom-theme-p th)
           (enable-theme th)
@@ -1221,7 +1254,9 @@ them as such. Also intended as a helper for `doom--theme-is-colorscheme-p'."
         ;; HACK: If the user uses `load-theme' in their $DOOMDIR instead of
         ;;   setting `doom-theme', override the latter, because they shouldn't
         ;;   be using both.
-        (unless (memq theme (ensure-list doom-theme))
+        (unless (or (eq doom-theme theme)
+                    (eq doom-theme (car-safe theme))
+                    (eq doom-theme (cdr-safe theme)))
           (setq-default doom-theme theme))))))
 
 (add-hook! 'after-make-frame-functions :depth -90

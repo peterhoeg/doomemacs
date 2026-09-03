@@ -1121,16 +1121,21 @@ to reverse this and trigger `after!' blocks at a more reasonable time."
                           "Created by `defer-feature!'.")
                   ',feature ',fns)
          :before ',fns
-         ;; Some plugins (like yasnippet) will invoke a fn early to parse
-         ;; code, which would prematurely trigger this. In those cases, well
-         ;; behaved plugins will use `delay-mode-hooks', which we can check for:
+         ;; Some plugins (like yasnippet) will invoke a fn early to parse code,
+         ;; which would prematurely trigger this. In those cases, well behaved
+         ;; plugins will use `delay-mode-hooks', which we can check for:
          (unless delay-mode-hooks
-           (unless (featurep ',feature)
-             ;; ...Otherwise, announce to the world this package has been
-             ;; loaded, so `after!' handlers can react.
-             (provide ',feature))
-           (dolist (fn ',fns)
-             (advice-remove fn #',advice-fn)))))))
+           (unwind-protect
+               (unless (featurep ',feature)
+                 ;; If anything in `after-load-functions' or `after-load-alist'
+                 ;; changes the current buffer, it could break the function
+                 ;; being advised and cause unexpected errors.
+                 (save-current-buffer
+                   ;; ...Otherwise, announce to the world this package has been
+                   ;; loaded, so `after!' handlers can react.
+                   (provide ',feature)))
+             (dolist (fn ',fns)
+               (advice-remove fn #',advice-fn))))))))
 
 
 ;;; ** Hooks

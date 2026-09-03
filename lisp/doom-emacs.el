@@ -1172,13 +1172,18 @@ windows, switch to `doom-fallback-buffer'. Otherwise, delegate to original
   (cond ((featurep :system 'macos)
          (if (boundp 'ns-system-appearance)
              (eq ns-system-appearance 'dark)
-           (let ((cmd "tell app \"System Events\" to tell appearance preferences to return dark mode"))
+           (let ((cmd "tell app \"System Events\" to tell appearance preferences to return (dark mode as text)")
+                 (true "true")
+                 (gui? (display-graphic-p)))
              (string-equal
-              "true"
-              (or (if (fboundp #'ns-do-applescript)  (ns-do-applescript cmd))
-                  (if (fboundp #'mac-do-applescript) (mac-do-applescript cmd))
-                  (string-trim (shell-command-to-string
-                                (format "osascript -e '%s'" cmd))))))))
+              (cond ((and gui? (fboundp 'mac-do-applescript))
+                     (setq true "\"true\"")
+                     (ignore-errors (mac-do-applescript cmd)))
+                    ((and gui? (fboundp 'ns-do-applescript))
+                     (ignore-errors (ns-do-applescript cmd)))
+                    ((string-trim (shell-command-to-string
+                                   (format "osascript -e '%s'" cmd)))))
+              true))))
         ((fboundp 'w32-read-registry)
          (eq 0 (w32-read-registry
                 'HKCU

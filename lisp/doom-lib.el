@@ -1116,6 +1116,10 @@ to reverse this and trigger `after!' blocks at a more reasonable time."
     `(progn
        (cl-callf2 delq ',feature features)
        (defadvice! ,advice-fn (&rest _)
+         ,(format (concat "Defers `%s' until on of these functions are called:\n\n"
+                          "%s\n\n"
+                          "Created by `defer-feature!'.")
+                  ',feature ',fns)
          :before ',fns
          ;; Some plugins (like yasnippet) will invoke a fn early to parse
          ;; code, which would prematurely trigger this. In those cases, well

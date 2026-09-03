@@ -444,12 +444,15 @@ TRIGGER-HOOK is a list of quoted hooks and/or sharp-quoted functions."
                            ;; internally). In that case assume this hook was
                            ;; invoked non-interactively.
                            (and (boundp hook)
-                                (symbol-value hook)))
-                       (or (null predicate)
-                           (funcall predicate)))
-              (setq running? t)  ; prevent infinite recursion
-              (doom-run-hooks hook-var)
-              (set hook-var nil))))
+                                (symbol-value hook))))
+              ;; The predicate or hooks could change the active buffer, breaking
+              ;; `after-find-file' (doomemacs/core#8884).
+              (save-current-buffer
+                (when (or (null predicate)
+                          (funcall predicate))
+                  (setq running? t)  ; prevent infinite recursion
+                  (doom-run-hooks hook-var)
+                  (set hook-var nil))))))
       (when (daemonp)
         ;; In a daemon session we don't need all these lazy loading shenanigans.
         ;; Just load everything immediately.

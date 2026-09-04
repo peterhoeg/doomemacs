@@ -830,22 +830,24 @@ This primes `org-mode' for reading."
 (defun doom-docs-link--kbd-activate-func (beg end key _bracketed?)
   (if (not org-descriptive-links)
       (remove-text-properties beg end '(display nil))
-    (let* ((keystr (doom-docs-link--kbd key))
-           (total (max 0 (- (string-width key)
-                            (string-width keystr))))
-           (keybeg (save-excursion
-                     (goto-char beg)
-                     (skip-chars-forward "^:" end)
-                     (1+ (point)))))
-      ;; Hide kbd:
-      (add-text-properties
-       beg keybeg `(invisible t intangible t cursor-intangible t))
-      ;; Resolve keybinds in str:
-      (when buffer-read-only
+    ;; Hide kbd:
+    (add-text-properties
+     beg (save-excursion
+           (goto-char beg)
+           (skip-chars-forward "^:" end)
+           (1+ (point)))
+     `(invisible t intangible t cursor-intangible t))
+    ;; Resolve keybinds in str:
+    (when buffer-read-only
+      (let ((keystr (doom-docs-link--kbd key)))
         (add-text-properties
          beg end `(display
-                   ,(propertize (concat keystr (make-string total ?\s))
-                                'face 'doom-docs-kbd)))))))
+                   ,(propertize
+                     (concat keystr
+                             (make-string (max 0 (- (string-width key)
+                                                    (string-width keystr)))
+                                          ?\s))
+                     'face 'doom-docs-kbd)))))))
 
 (defun doom-docs-link--kbd-help-echo (window object pos)
   (with-selected-window window

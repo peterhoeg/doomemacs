@@ -814,7 +814,9 @@ This primes `org-mode' for reading."
                        ("\\<M-" . "Meta-")
                        ("\\<S-" . "Shift-")
                        ("\\<s-" . "super-")
-                       ("\\<C-" . "Ctrl-"))))
+                       ("\\<C-" . "Ctrl-")))
+                 ("\\[" . "[")
+                 ("\\]" . "]"))
                keystr)
     (setq keystr
           (replace-regexp-in-string (car key) (cdr key)
